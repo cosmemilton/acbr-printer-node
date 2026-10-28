@@ -1,0 +1,21 @@
+{
+  "project": "Free Pascal",
+  "version": "3.2.2",
+  "files": [
+    {
+      "file": "COPYING.LGPL.txt",
+      "url": "https://gitlab.com/freepascal.org/fpc/source/-/raw/release_3_2_2/rtl/COPYING.txt",
+      "sha256": "3cf7652df6cd6736097af4eca6a8c35ef2fb2d103c647d817c152baa5c8dd9da"
+    },
+    {
+      "file": "COPYING.FPC",
+      "url": "https://gitlab.com/freepascal.org/fpc/source/-/raw/release_3_2_2/rtl/COPYING.FPC",
+      "sha256": "f65c27c43c289a842185f7948820a01b8eda29021cb0ec0dcdd3d646def9cf69"
+    },
+    {
+      "file": "COPYING.GPL.txt",
+      "url": "https://gitlab.com/freepascal.org/fpc/source/-/raw/release_3_2_2/compiler/COPYING.txt",
+      "sha256": "18642186b4e8c3ad411729cef6febb1f7793f644518df1d90c218ef48e1ffa06"
+    }
+  ]
+}

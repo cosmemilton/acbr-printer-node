@@ -1,0 +1,59 @@
+{
+  "name": "cosmemilton-acbr-printer-node",
+  "version": "0.1.0",
+  "description": "Impressão Node.js com ACBrPosPrinter, FortesReport e DANFE via Free Pascal/Lazarus",
+  "license": "LGPL-2.1-or-later",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/types/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/src/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "test",
+    "tsconfig.json",
+    "native",
+    "runtime",
+    "scripts",
+    "examples",
+    "docs",
+    "LICENSE",
+    "NOTICE",
+    "DEPENDENCIES.lock.json",
+    "README.md",
+    "sources"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "build:native": "node scripts/build-native.mjs",
+    "test:package": "node scripts/test-package.mjs",
+    "sources:prepare": "node scripts/prepare-sources.mjs",
+    "build:libxml2": "node scripts/build-libxml2.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cosmemilton/acbr-printer-node.git"
+  },
+  "homepage": "https://github.com/cosmemilton/acbr-printer-node#readme",
+  "bugs": {
+    "url": "https://github.com/cosmemilton/acbr-printer-node/issues"
+  }
+}

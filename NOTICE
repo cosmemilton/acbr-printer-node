@@ -1,0 +1,20 @@
+ACBr Printer Node — integração independente Node.js/Free Pascal para impressão.
+Copyright 2026 Cosmemilton e colaboradores.
+
+O código deste projeto é distribuído sob LGPL-2.1-or-later.
+Não é um produto oficial do Projeto ACBr. Não usa Delphi nem binários ACBr Pro.
+
+ACBr: fontes públicas do Projeto ACBr, revisão SVN 48590.
+Origem: https://svn.code.sf.net/p/acbr/code/trunk2
+Os cabeçalhos e o arquivo de licença originais são preservados nas fontes e
+nos materiais correspondentes incluídos no runtime.
+
+FortesReport Community Edition: snapshot oficial
+888e387faca5a691b246a6b493776b8435be59f3.
+Origem: https://github.com/fortesinformatica/fortesreport-ce
+O LICENSE desse snapshot identifica Apache-2.0. Há unidades com cabeçalhos
+históricos LGPL; esses avisos são preservados integralmente nas fontes.
+
+O runtime inclui arquivos de licenças e fontes correspondentes, além da
+identificação da compilação. Free Pascal, Lazarus, bibliotecas gráficas e demais
+dependências mantêm seus próprios avisos e licenças. Este NOTICE não os substitui.
