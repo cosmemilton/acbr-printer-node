@@ -20,3 +20,4 @@ coverage/
 *.pfx
 *.p12
 *.key
+.release/

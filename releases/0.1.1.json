@@ -1,0 +1,14 @@
+{
+  "name": "cosmemilton-acbr-printer-node",
+  "version": "0.1.1",
+  "file": "cosmemilton-acbr-printer-node-0.1.1.tgz",
+  "bytes": 74656925,
+  "sha256": "3a6cd6ba1cd7a875a170a33d7644760c13e5d744f5913a5840b280e98d925c52",
+  "sourceCommit": "619d05eec71564bb7343b4cdb7f275cdd83947bb",
+  "transportRef": "refs/heads/npm-reviewed-0.1.1",
+  "transportCommit": "7657b5dbb1892b43ce18c1d3917e43d8b71ccbd3",
+  "repository": "cosmemilton/acbr-printer-node",
+  "tag": "v0.1.1",
+  "formatVersion": 1,
+  "npmAccount": "miltoncosme"
+}
