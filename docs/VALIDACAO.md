@@ -1,4 +1,4 @@
-# Estado da validação — 0.1.0
+# Estado da validação
 
 Este arquivo registra testes do novo pacote de impressão. Não representa homologação fiscal ou confirmação de saída física. O emissor existente não foi alterado.
 
@@ -30,8 +30,16 @@ Destino informado: compartilhamento Windows `\\localhost\elgin`; nome de fila pa
 
 Nenhum dos exemplos envia um trabalho físico sem `--enviar`. Foi enviado um único cupom não fiscal, tipo `0`, pelo ACBrPosPrinter para `\\localhost\elgin`. O motor retornou `ENVIADO` e o usuário confirmou que o papel saiu legível. A fila foi identificada como `ELGIN`, driver `ELGIN i9(USB)`, porta `USB001`.
 
-O tipo `8` foi exercitado apenas na geração de bytes em arquivo/memória. Não houve teste físico de comandos avançados, corte ou gaveta. O envio gráfico pelo spooler e a impressão física de DANFE ainda precisam de validação no equipamento; a renderização dos dois modelos em PDF já foi testada.
+Na etapa 0.1.0, o tipo `8` foi exercitado apenas na geração de bytes em arquivo/memória. O teste físico especializado da versão 0.1.1 está registrado abaixo; não houve acionamento de gaveta. O envio gráfico pelo spooler e a impressão física de DANFE ainda precisam de validação no equipamento; a renderização dos dois modelos em PDF já foi testada.
 
 ## Distribuição
 
 Não houve publicação npm, alteração de serviço ou transmissão à SEFAZ nesta etapa. A instalação deve usar os tarballs locais auditados. A disponibilidade efetiva de recursos deve ser consultada em `capacidades()`, principalmente quando o runtime foi compilado com `--pos-only`.
+
+## Teste especializado — 0.1.1
+
+O tipo `8` recebeu teste físico explícito em `\\localhost\elgin`, com um único cupom não fiscal. Antes do envio, o motor ACBr gerou 877 bytes e a conferência identificou 14 comandos: negrito, sublinhado, expandido, altura dupla, tamanho combinado, condensado, invertido, três alinhamentos, QR Code, Code128, EAN13 e exatamente um corte total. O avanço antes do corte foi configurado em cinco linhas. Não houve abertura de gaveta ou beep.
+
+O envio retornou `sucesso: true`, `ENVIADO`, `envioIniciado: true` e `resultadoIncerto: false`. O usuário confirmou que tudo funcionou e os códigos foram lidos: corte total, estilos e alinhamentos corretos; QR Code `ACBR-TESTE-TIPO8`, Code128 `ACBR123456` e EAN13 `7891234567895`. Essa confirmação física foi recebida em 28/10/2026.
+
+`cortarPapel` é uma nova opção booleana com padrão `false`. Os testes de geração confirmaram que o comando de corte só aparece com habilitação explícita. O exemplo `examples/escpos-avancado.mjs` gera e verifica os comandos por padrão; só imprime com `--enviar`.

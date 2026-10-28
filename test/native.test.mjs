@@ -34,6 +34,26 @@ test('real ACBr type eight translates tags only into an in-memory job', { skip: 
   } finally { await printer.fechar(); }
 });
 
+test('real ACBr type eight emits a cut command only with explicit opt-in, without touching a printer',
+  { skip: !enabled }, async () => {
+    const cutCommand = Buffer.from([0x1d, 0x56, 0x00]); // ACBr EscPosStar inherits Epson GS V 0.
+    const content = 'TESTE DE CORTE APENAS EM ARQUIVO\n\n\n</corte_total>';
+    for (const cortarPapel of [undefined, false, true]) {
+      const options = { runtimeDirectory, tipo: 8, interpretarTags: true };
+      if (cortarPapel !== undefined) options.cortarPapel = cortarPapel;
+      const printer = criarImpressora(options);
+      try {
+        const result = await printer.gerarEscpos(content);
+        assert.equal(result.sucesso, true, JSON.stringify(result));
+        assert.equal(result.envioIniciado, false);
+        assert.ok(['PREPARADO', 'GERADO'].includes(result.estado));
+        assert.equal(result.dados.includes(cutCommand), cortarPapel === true,
+          'The cutter command must remain disabled by default and respond to explicit opt-in.');
+        assert.equal(result.dados.toString('latin1').includes('</corte_total>'), false);
+      } finally { await printer.fechar(); }
+    }
+  });
+
 test('real Fortes DANFE renders synthetic 55 and 65 XML to PDF without print transport',
   { skip: !enabled || process.env.ACBR_PRINTER_PDF_TEST !== '1' }, async () => {
     const printer = criarImpressora({ runtimeDirectory });

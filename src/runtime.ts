@@ -175,12 +175,13 @@ function textData(value: unknown): string {
 export function criarImpressora(options: ConfiguracaoImpressora = {}) {
   const rawOptions: unknown = options;
   if (!plain(rawOptions)) throw fail('CONFIGURACAO_INVALIDA', 'Informe a configuração como objeto.');
-  keys(rawOptions, ['modo', 'porta', 'impressora', 'tipo', 'colunas', 'linhasEntreCupons', 'interpretarTags', 'runtimeDirectory', 'timeoutMs', 'limiteFila', 'criaProcesso'], 'CONFIGURACAO_INVALIDA');
+  keys(rawOptions, ['modo', 'porta', 'impressora', 'tipo', 'colunas', 'linhasEntreCupons', 'interpretarTags', 'cortarPapel', 'runtimeDirectory', 'timeoutMs', 'limiteFila', 'criaProcesso'], 'CONFIGURACAO_INVALIDA');
   const mode = options.modo === undefined ? 'escpos' : options.modo;
   const kind = options.tipo === undefined ? 0 : options.tipo;
   if (!['escpos', 'spooler'].includes(mode)) throw fail('CONFIGURACAO_INVALIDA', 'O modo deve ser escpos ou spooler.');
   if (kind !== 0 && kind !== 8) throw fail('CONFIGURACAO_INVALIDA', 'O tipo deve ser 0 (texto) ou 8 (ESC/POS Star).');
   if (options.interpretarTags !== undefined && typeof options.interpretarTags !== 'boolean') throw fail('CONFIGURACAO_INVALIDA', 'interpretarTags deve ser booleano.');
+  if (options.cortarPapel !== undefined && typeof options.cortarPapel !== 'boolean') throw fail('CONFIGURACAO_INVALIDA', 'cortarPapel deve ser booleano.');
   if (options.runtimeDirectory !== undefined && (typeof options.runtimeDirectory !== 'string' || !options.runtimeDirectory.trim() || options.runtimeDirectory.includes('\0'))) {
     throw fail('CONFIGURACAO_INVALIDA', 'Informe um runtimeDirectory válido.');
   }
@@ -188,7 +189,7 @@ export function criarImpressora(options: ConfiguracaoImpressora = {}) {
   const config: ConfiguracaoMotor = { modo: mode, tipo: kind,
     colunas: integer(options.colunas === undefined ? 48 : options.colunas, 1, 200, 'colunas'),
     linhasEntreCupons: integer(options.linhasEntreCupons === undefined ? 0 : options.linhasEntreCupons, 0, 100, 'linhasEntreCupons'),
-    interpretarTags: options.interpretarTags ?? false };
+    interpretarTags: options.interpretarTags ?? false, cortarPapel: options.cortarPapel ?? false };
   const port = destination(options.porta, 'porta'), printer = destination(options.impressora, 'impressora');
   if (port !== undefined) config.porta = port;
   if (printer !== undefined) config.impressora = printer;

@@ -2,7 +2,7 @@
 
 Impressão no Node.js com ACBrPosPrinter, FortesReport e os renderizadores DANFE do ACBr, compilados com Free Pascal/Lazarus. Pacote independente de `cosmemilton-acbr-node`: pode ser usado sozinho ou receber o XML produzido pelo emissor. Não usa Delphi nem binários ACBr Pro e não é um produto oficial do Projeto ACBr.
 
-Versão inicial: **0.1.0**. Esta documentação descreve o código local; não afirma disponibilidade no registry npm. O estado dos testes está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
+Versão local: **0.1.1**. Esta documentação descreve o código local; não afirma disponibilidade no registry npm. O estado dos testes está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
 
 ## Um pacote, três formas de impressão
 
@@ -20,7 +20,7 @@ Requer Node.js **22.12 ou superior**, x64, em Windows ou Linux. Instale o tarbal
 
 ```sh
 npm install --offline --ignore-scripts --no-audit --no-fund \
-  /caminho/cosmemilton-acbr-printer-node-0.1.0.tgz
+  /caminho/cosmemilton-acbr-printer-node-0.1.1.tgz
 ```
 
 O consumidor usa o executável já compilado. Free Pascal, Lazarus e as fontes são necessários para reconstruí-lo, não para carregar a API Node. Um runtime próprio pode ser informado por `runtimeDirectory`.
@@ -56,7 +56,18 @@ node examples/escpos-texto.mjs
 node examples/escpos-texto.mjs --enviar
 ```
 
-`tipo: 0` é `ppTexto`, o padrão inicial. `tipo: 8` é `ppEscPosStar`, a emulação informada para a impressora do usuário; o tipo não é deduzido da marca ou do nome da fila. Os comandos avançados ficam para uma etapa posterior. Tags são opt-in com `interpretarTags: true`. Corte e gaveta não são acionados implicitamente.
+`tipo: 0` é `ppTexto`, o padrão inicial. `tipo: 8` é `ppEscPosStar`, a emulação informada para a impressora do usuário; o tipo não é deduzido da marca ou do nome da fila. Tags são opt-in com `interpretarTags: true`. As tags de corte exigem também `cortarPapel: true`; o padrão continua sem corte. A gaveta não é acionada implicitamente.
+
+### Teste especializado do tipo 8
+
+```sh
+node examples/escpos-avancado.mjs
+node examples/escpos-avancado.mjs --enviar
+```
+
+O primeiro comando gera o cupom apenas em memória e confere os bytes reais de negrito, sublinhado, tamanho expandido/duplo, condensado, invertido, alinhamentos, QR Code, Code128, EAN13 e um único corte total. O segundo faz essa mesma conferência antes de enviar um único cupom para `\\localhost\elgin`. O corte é explícito, após avanço de cinco linhas. O exemplo não abre gaveta nem emite beep.
+
+Confira no papel e com um leitor: o QR Code deve retornar `ACBR-TESTE-TIPO8`, o Code128 `ACBR123456` e o EAN13 `7891234567895`. A geração dos bytes e o retorno `ENVIADO` não substituem essa conferência física.
 
 ## Spooler Windows
 
@@ -118,6 +129,7 @@ node examples/integracao-emissor.mjs ./resultado-fiscal.json ./danfe.pdf
 | `colunas` | `48` | Inteiro de 1 a 200 |
 | `linhasEntreCupons` | `0` | Inteiro de 0 a 100 |
 | `interpretarTags` | `false` | Booleano |
+| `cortarPapel` | `false` | Booleano; habilita tags de corte no ACBrPosPrinter |
 | `timeoutMs` | `30000` | Inteiro de 1 a 120000 |
 | `limiteFila` | `32` | Inteiro de 0 a 1000 |
 | `runtimeDirectory` | runtime distribuído | Diretório de runtime com manifesto válido |

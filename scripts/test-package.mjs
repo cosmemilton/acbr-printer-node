@@ -119,6 +119,7 @@ module.exports = async function check(api) {
       assert.equal(capabilities.sucesso, true);
       assert.equal(capabilities.envioIniciado, false);
       assert.equal(capabilities.capacidades.tipoPadrao, 0);
+      assert.equal(capabilities.capacidades.cortePapelOptIn, true);
       const bytes = await printer.gerarEscpos('TESTE INSTALACAO OFFLINE\\n');
       assert.equal(bytes.sucesso, true);
       assert.equal(bytes.envioIniciado, false);

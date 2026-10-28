@@ -46,7 +46,7 @@ type
     FID, FCommand, FMode, FPort, FPrinter: string;
     FModel, FColumns, FBetweenReceipts, FCopies: Integer;
     FPaperWidth: Double;
-    FInterpretTags, FSendStarted: Boolean;
+    FInterpretTags, FCutEnabled, FSendStarted: Boolean;
     procedure ReadConfiguration;
     procedure BeginPhysicalSend;
     procedure Finish(const AState, AMessage: string);
@@ -236,6 +236,7 @@ begin
   FColumns := IntegerValue(Config, 'colunas', 48, 1, 200);
   FBetweenReceipts := IntegerValue(Config, 'linhasEntreCupons', 0, 0, 100);
   FInterpretTags := BooleanValue(Config, 'interpretarTags', False);
+  FCutEnabled := BooleanValue(Config, 'cortarPapel', False);
   FPort := StringValue(Config, 'porta', '');
   FPrinter := StringValue(Config, 'impressora', '');
   if (Pos(#0, FPort) > 0) or (Pos(#0, FPrinter) > 0) then
@@ -279,7 +280,7 @@ begin
     Result.Porta := APort;
     Result.ColunasFonteNormal := FColumns;
     Result.LinhasEntreCupons := FBetweenReceipts;
-    Result.CortaPapel := False;
+    Result.CortaPapel := FCutEnabled;
     // Texto puro não injeta seleção de página de código nem interpreta tags.
     if FModel = 0 then Result.PaginaDeCodigo := pcNone;
   except
@@ -323,6 +324,7 @@ var
 begin
   Data := TJSONObject.Create;
   Data.Add('escpos', True);
+  Data.Add('cortePapelOptIn', True);
   {$IFDEF ACBR_PRINTER_FORTES}
   Data.Add('spoolerFortes', True);
   {$ELSE}

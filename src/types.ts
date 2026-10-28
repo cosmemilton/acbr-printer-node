@@ -21,6 +21,8 @@ export interface ConfiguracaoImpressora {
   colunas?: number;
   linhasEntreCupons?: number;
   interpretarTags?: boolean;
+  /** Permite tags de corte; permanece desativado até autorização explícita. */
+  cortarPapel?: boolean;
   runtimeDirectory?: string;
   timeoutMs?: number;
   limiteFila?: number;
@@ -35,6 +37,7 @@ export interface ConfiguracaoMotor {
   colunas: number;
   linhasEntreCupons: number;
   interpretarTags: boolean;
+  cortarPapel: boolean;
 }
 export interface OpcoesOperacao { signal?: AbortSignal }
 export interface OpcoesDanfe { copias?: number; larguraPapel?: number }

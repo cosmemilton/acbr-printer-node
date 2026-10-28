@@ -111,7 +111,7 @@ test('text defaults to ACBr type zero and content travels only through stdin', a
   assert.equal(f.sessions.length, 1);
   const session = f.sessions[0];
   assert.deepEqual(session.request.config, { modo: 'escpos', porta: join(f.directory, 'synthetic-output.prn'),
-    tipo: 0, colunas: 48, linhasEntreCupons: 0, interpretarTags: false });
+    tipo: 0, colunas: 48, linhasEntreCupons: 0, interpretarTags: false, cortarPapel: false });
   assert.equal(session.request.texto, text);
   assert.equal(session.options.shell, false);
   assert.equal(session.options.windowsHide, true);
@@ -123,8 +123,26 @@ test('ACBr type eight remains explicit and is generated without physical printin
   await f.create({ tipo: 8, interpretarTags: true }).gerarEscpos('<n>TESTE</n>\n');
   assert.equal(f.sessions[0].request.config.tipo, 8);
   assert.equal(f.sessions[0].request.config.interpretarTags, true);
+  assert.equal(f.sessions[0].request.config.cortarPapel, false);
   assert.equal(f.sessions[0].request.comando, 'gerarEscpos');
   assert.equal(f.sessions[0].kills.length, 0);
+});
+
+test('paper cutting is opt-in and only its explicit boolean reaches the native worker', async t => {
+  const f = await fixture(t);
+  for (const tipo of [0, 8]) {
+    for (const cortarPapel of [undefined, false, true]) {
+      const options = { tipo, interpretarTags: true };
+      if (cortarPapel !== undefined) options.cortarPapel = cortarPapel;
+      const result = await f.create(options).gerarEscpos('CORTE SOMENTE EM ARQUIVO\n</corte_total>');
+      const session = f.sessions.at(-1);
+      assert.equal(session.request.config.cortarPapel, cortarPapel === true);
+      assert.equal(session.request.comando, 'gerarEscpos');
+      assert.equal(result.envioIniciado, false);
+      assert.equal(session.kills.length, 0);
+    }
+  }
+  assert.equal(f.sessions.length, 6);
 });
 
 test('configuration rejects invalid ranges, modes and unexpected credential fields', () => {
@@ -134,6 +152,7 @@ test('configuration rejects invalid ranges, modes and unexpected credential fiel
     { limiteFila: -1 }, { interpretarTags: 'true' }, { certificado: { senha: 'secret' } },
     { impressora: 'x\nother' }, { modo: null }, { tipo: null }, { colunas: null },
     { linhasEntreCupons: null }, { timeoutMs: null }, { limiteFila: null }, { interpretarTags: null },
+    { cortarPapel: null }, { cortarPapel: 'true' }, { cortarPapel: 1 }, { cortarPapel: [] },
   ]) {
     assert.throws(() => criarImpressora(config), expectedError(), JSON.stringify(config));
   }
