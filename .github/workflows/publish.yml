@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  REVIEWED_MANIFEST: releases/0.1.2.json
+  REVIEWED_MANIFEST: releases/0.1.3.json
   BUNDLE_DIRECTORY: .release
 
 jobs:
@@ -39,24 +39,24 @@ jobs:
       - name: Download immutable reviewed bundle
         run: python3 scripts/download-reviewed-bundle.py "$REVIEWED_MANIFEST" "$BUNDLE_DIRECTORY"
       - name: Audit package, runtimes and licenses
-        run: node scripts/npm-stage-release.mjs --audit "$BUNDLE_DIRECTORY/cosmemilton-acbr-printer-node-0.1.2.tgz" "$REVIEWED_MANIFEST" "$BUNDLE_DIRECTORY"
+        run: node scripts/npm-stage-release.mjs --audit "$BUNDLE_DIRECTORY/cosmemilton-acbr-printer-node-0.1.3.tgz" "$REVIEWED_MANIFEST" "$BUNDLE_DIRECTORY"
       - name: Preserve reviewed bundle as GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          if ! gh release view v0.1.2 >/dev/null 2>&1; then
-            gh release create v0.1.2 --target 25ec2a3079d54ace6f6cea5fc0f9b84d2da82bc4 --title 'ACBr Printer Node 0.1.2' --notes 'Pacote auditado com runtimes Windows e Linux. A disponibilizacao desta release no GitHub nao confirma publicacao no npm; o envio ao npm requer aprovacao em Staged Packages.'
+          if ! gh release view v0.1.3 >/dev/null 2>&1; then
+            gh release create v0.1.3 --target ba231bd37153ca1a868ad2aae95795007a79aedb --title 'ACBr Printer Node 0.1.3' --notes 'Pacote auditado com runtimes Windows e Linux. A disponibilizacao desta release no GitHub nao confirma publicacao no npm; o envio ao npm requer aprovacao em Staged Packages.'
           fi
-          gh release upload v0.1.2 "$BUNDLE_DIRECTORY/cosmemilton-acbr-printer-node-0.1.2.tgz" "$BUNDLE_DIRECTORY/cosmemilton-acbr-printer-node-0.1.2.tgz.sha256" "$BUNDLE_DIRECTORY/REVIEWED_BUNDLE.json" --clobber
+          gh release upload v0.1.3 "$BUNDLE_DIRECTORY/cosmemilton-acbr-printer-node-0.1.3.tgz" "$BUNDLE_DIRECTORY/cosmemilton-acbr-printer-node-0.1.3.tgz.sha256" "$BUNDLE_DIRECTORY/REVIEWED_BUNDLE.json" --clobber
       - name: Submit for npm maintainer approval
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: node scripts/npm-stage-release.mjs --stage "$BUNDLE_DIRECTORY/cosmemilton-acbr-printer-node-0.1.2.tgz" "$REVIEWED_MANIFEST" "$BUNDLE_DIRECTORY"
+        run: node scripts/npm-stage-release.mjs --stage "$BUNDLE_DIRECTORY/cosmemilton-acbr-printer-node-0.1.3.tgz" "$REVIEWED_MANIFEST" "$BUNDLE_DIRECTORY"
       - name: Save sanitized publication result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: npm-publication-result-0.1.2
+          name: npm-publication-result-0.1.3
           path: .release/PUBLICATION_RESULT.json
           if-no-files-found: ignore
