@@ -3,8 +3,44 @@ import type { ChildProcessWithoutNullStreams, SpawnOptionsWithoutStdio } from 'n
 
 export const PROTOCOL_VERSION = 1 as const;
 export const SOURCE_REVISION = 48590 as const;
-export const TIPOS_IMPRESSORA = { Texto: 0, EscPosStar: 8 } as const;
+export const TIPOS_IMPRESSORA = {
+  Texto: 0,
+  EscPosEpson: 1,
+  EscBematech: 2,
+  EscDaruma: 3,
+  EscVox: 4,
+  EscDiebold: 5,
+  EscEpsonP2: 6,
+  CustomPos: 7,
+  EscPosStar: 8,
+  EscZJiang: 9,
+  EscGPrinter: 10,
+  EscDatecs: 11,
+  EscSunmi: 12,
+} as const;
 export type TipoImpressora = typeof TIPOS_IMPRESSORA[keyof typeof TIPOS_IMPRESSORA];
+export interface ModeloImpressora {
+  readonly tipo: TipoImpressora;
+  /** Identificador original do enum ACBr fixado na revisão SOURCE_REVISION. */
+  readonly nome: string;
+  readonly rotulo: string;
+}
+/** Modelos nativos disponíveis; ppExterno exige uma implementação Pascal do host. */
+export const MODELOS_IMPRESSORA: readonly ModeloImpressora[] = Object.freeze([
+  Object.freeze({ tipo: 0, nome: "ppTexto", rotulo: "Texto" }),
+  Object.freeze({ tipo: 1, nome: "ppEscPosEpson", rotulo: "ESC/POS Epson" }),
+  Object.freeze({ tipo: 2, nome: "ppEscBematech", rotulo: "Bematech" }),
+  Object.freeze({ tipo: 3, nome: "ppEscDaruma", rotulo: "Daruma" }),
+  Object.freeze({ tipo: 4, nome: "ppEscVox", rotulo: "Vox" }),
+  Object.freeze({ tipo: 5, nome: "ppEscDiebold", rotulo: "Diebold" }),
+  Object.freeze({ tipo: 6, nome: "ppEscEpsonP2", rotulo: "Epson P2" }),
+  Object.freeze({ tipo: 7, nome: "ppCustomPos", rotulo: "Custom POS" }),
+  Object.freeze({ tipo: 8, nome: "ppEscPosStar", rotulo: "POS Star/Elgin" }),
+  Object.freeze({ tipo: 9, nome: "ppEscZJiang", rotulo: "ZJiang" }),
+  Object.freeze({ tipo: 10, nome: "ppEscGPrinter", rotulo: "GPrinter" }),
+  Object.freeze({ tipo: 11, nome: "ppEscDatecs", rotulo: "Datecs" }),
+  Object.freeze({ tipo: 12, nome: "ppEscSunmi", rotulo: "Sunmi" }),
+]);
 export type ModoImpressao = 'escpos' | 'spooler';
 export type ComandoImpressao = 'capacidades' | 'listarImpressoras' | 'gerarEscpos' | 'imprimirTexto' | 'danfePdf' | 'imprimirDanfe';
 export type EstadoImpressao = 'PREPARADO' | 'ENVIADO' | 'GERADO' | 'ERRO';
@@ -34,7 +70,7 @@ export interface ConfiguracaoImpressora {
   porta?: string;
   /** Nome da fila instalada no sistema, por exemplo elgin. */
   impressora?: string;
-  /** Linguagem ACBrPosPrinter: 0 = texto; 8 = ESC/POS Star. */
+  /** Modelo nativo ACBrPosPrinter de MODELOS_IMPRESSORA; 0 = texto, 8 = POS Star/Elgin. */
   tipo?: TipoImpressora;
   colunas?: number;
   linhasEntreCupons?: number;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
-import { criarImpressora } from '../dist/index.js';
+import { criarImpressora, MODELOS_IMPRESSORA } from '../dist/index.js';
 import { syntheticXml } from './fixtures/synthetic-nfe.mjs';
 
 const enabled = process.env.ACBR_PRINTER_NATIVE_TEST === '1';
@@ -84,6 +84,21 @@ test('new native serial/layout settings are accepted offline and capabilities ex
     assert.equal(caps.sucesso,true,JSON.stringify(caps));
     assert.equal(caps.capacidades.serialConfiguravel,true);
     assert.equal(caps.capacidades.layoutSpoolerConfiguravel,true);
-    assert.deepEqual(caps.capacidades.tipos,[0,8]);
+    assert.deepEqual(caps.capacidades.tipos,MODELOS_IMPRESSORA.map(model => model.tipo));
+    assert.deepEqual(caps.capacidades.modelos,MODELOS_IMPRESSORA);
   } finally {await pos.fechar();await graphic.fechar();}
+});
+
+
+test('every real ACBr built-in model generates nonempty bytes without a physical destination', {skip:!enabled}, async () => {
+  for (const {tipo,nome} of MODELOS_IMPRESSORA) {
+    const printer = criarImpressora({runtimeDirectory,tipo,interpretarTags:true});
+    try {
+      const result = await printer.gerarEscpos('TESTE MODELO '+tipo+' - SEM VALOR FISCAL\n');
+      assert.equal(result.sucesso,true,nome+': '+JSON.stringify(result));
+      assert.equal(result.envioIniciado,false,nome);
+      assert.ok(Buffer.isBuffer(result.dados) && result.dados.length > 0,nome);
+      assert.ok(result.dados.includes(Buffer.from('TESTE MODELO '+tipo)),nome);
+    } finally {await printer.fechar();}
+  }
 });

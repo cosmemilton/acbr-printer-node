@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import { PassThrough } from 'node:stream';
 import { test } from 'node:test';
-import { criarImpressora, ErroAcbrImpressora } from '../dist/index.js';
+import { criarImpressora, ErroAcbrImpressora, MODELOS_IMPRESSORA, TIPOS_IMPRESSORA } from '../dist/index.js';
 
 const xml = '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00"><NFe><infNFe versao="4.00"><ide><mod>65</mod></ide></infNFe></NFe></nfeProc>';
 const base64 = value => Buffer.from(value).toString('base64');
@@ -147,7 +147,7 @@ test('paper cutting is opt-in and only its explicit boolean reaches the native w
 
 test('configuration rejects invalid ranges, modes and unexpected credential fields', () => {
   for (const config of [
-    { modo: 'raw' }, { tipo: 1 }, { tipo: '0' }, { colunas: 0 }, { colunas: 201 },
+    { modo: 'raw' }, { tipo: 13 }, { tipo: '0' }, { colunas: 0 }, { colunas: 201 },
     { linhasEntreCupons: -1 }, { linhasEntreCupons: 101 }, { timeoutMs: 0 },
     { limiteFila: -1 }, { interpretarTags: 'true' }, { certificado: { senha: 'secret' } },
     { impressora: 'x\nother' }, { modo: null }, { tipo: null }, { colunas: null },
@@ -398,4 +398,46 @@ test('new options reject old runtime manifests instead of silently ignoring sett
   await assert.rejects(f.create({serial:{}}).gerarEscpos('SEM ENVIO'), expectedError('RUNTIME_INCOMPATIVEL'));
   await assert.rejects(f.create({modo:'spooler',layout:{}}).capacidades(), expectedError('RUNTIME_INCOMPATIVEL'));
   assert.equal(f.sessions.length,0);
+});
+
+
+test('the immutable native model catalogue preserves ACBr ordinals and the Star/Elgin label', () => {
+  assert.deepEqual(MODELOS_IMPRESSORA.map(model => model.tipo), Array.from({length:13}, (_, index) => index));
+  assert.deepEqual(MODELOS_IMPRESSORA.map(model => model.nome),
+    ['ppTexto','ppEscPosEpson','ppEscBematech','ppEscDaruma','ppEscVox','ppEscDiebold','ppEscEpsonP2',
+     'ppCustomPos','ppEscPosStar','ppEscZJiang','ppEscGPrinter','ppEscDatecs','ppEscSunmi']);
+  assert.deepEqual(Object.values(TIPOS_IMPRESSORA), MODELOS_IMPRESSORA.map(model => model.tipo));
+  assert.equal(TIPOS_IMPRESSORA.Texto, 0);
+  assert.equal(TIPOS_IMPRESSORA.EscPosStar, 8);
+  assert.equal(MODELOS_IMPRESSORA.find(model => model.tipo === 8).rotulo, 'POS Star/Elgin');
+  assert.ok(Object.isFrozen(MODELOS_IMPRESSORA));
+  assert.ok(MODELOS_IMPRESSORA.every(Object.isFrozen));
+  for (const tipo of [-1, 13, 14, 1.5, NaN, '1', null]) {
+    assert.throws(() => criarImpressora({tipo}), expectedError('CONFIGURACAO_INVALIDA'));
+  }
+});
+
+test('every built-in ACBr model reaches JSONL unchanged with the required runtime feature', async t => {
+  const f = await fixture(t);
+  f.manifest.features = ['modelos-acbr'];
+  await writeFile(join(f.directory, 'manifest.json'), JSON.stringify(f.manifest));
+  for (const {tipo} of MODELOS_IMPRESSORA) {
+    const result = await f.create({tipo}).gerarEscpos('SEM DISPOSITIVO\n');
+    assert.equal(result.envioIniciado, false);
+    assert.equal(f.sessions.at(-1).request.config.tipo, tipo);
+    assert.equal(f.sessions.at(-1).request.comando, 'gerarEscpos');
+    assert.equal(f.sessions.at(-1).request.config.cortarPapel, false);
+  }
+});
+
+test('new model ordinals reject an old runtime before spawn while zero and eight remain compatible', async t => {
+  const f = await fixture(t);
+  f.manifest.features = ['serial', 'layout-spooler'];
+  await writeFile(join(f.directory, 'manifest.json'), JSON.stringify(f.manifest));
+  for (const {tipo} of MODELOS_IMPRESSORA.filter(model => ![0,8].includes(model.tipo))) {
+    await assert.rejects(f.create({tipo}).gerarEscpos('SEM ENVIO'), expectedError('RUNTIME_INCOMPATIVEL'));
+  }
+  assert.equal(f.sessions.length, 0);
+  for (const tipo of [0,8]) await f.create({tipo}).gerarEscpos('COMPATIVEL SEM ENVIO');
+  assert.deepEqual(f.sessions.map(session => session.request.config.tipo), [0,8]);
 });

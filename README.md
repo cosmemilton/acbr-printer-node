@@ -2,7 +2,7 @@
 
 Impressão no Node.js com ACBrPosPrinter, FortesReport e os renderizadores DANFE do ACBr, compilados com Free Pascal/Lazarus. Pacote independente de `cosmemilton-acbr-node`: pode ser usado sozinho ou receber o XML produzido pelo emissor. Não usa Delphi nem binários ACBr Pro e não é um produto oficial do Projeto ACBr.
 
-Versão local: **0.1.2**. Esta documentação descreve o código local; não afirma disponibilidade no registry npm. O estado dos testes está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
+Versão local: **0.1.3**. Esta documentação descreve o código local; não afirma disponibilidade no registry npm. O estado dos testes está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
 
 ## Um pacote, três formas de impressão
 
@@ -20,7 +20,7 @@ Requer Node.js **22.12 ou superior**, x64, em Windows ou Linux. Instale o tarbal
 
 ```sh
 npm install --offline --ignore-scripts --no-audit --no-fund \
-  /caminho/cosmemilton-acbr-printer-node-0.1.2.tgz
+  /caminho/cosmemilton-acbr-printer-node-0.1.3.tgz
 ```
 
 O consumidor usa o executável já compilado. Free Pascal, Lazarus e as fontes são necessários para reconstruí-lo, não para carregar a API Node. Um runtime próprio pode ser informado por `runtimeDirectory`.
@@ -125,7 +125,7 @@ node examples/integracao-emissor.mjs ./resultado-fiscal.json ./danfe.pdf
 | `modo` | `'escpos'` | `'escpos'` ou `'spooler'` |
 | `porta` | omitida | Destino POS; obrigatório apenas no envio POS |
 | `impressora` | omitida | Fila do spooler; obrigatória apenas no envio por spooler |
-| `tipo` | `0` | `0` ou `8` |
+| `tipo` | `0` | Modelos nativos de `0` a `12`; catálogo `MODELOS_IMPRESSORA` |
 | `colunas` | `48` | Inteiro de 1 a 200 |
 | `linhasEntreCupons` | `0` | Inteiro de 0 a 100 |
 | `interpretarTags` | `false` | Booleano |
@@ -135,6 +135,41 @@ node examples/integracao-emissor.mjs ./resultado-fiscal.json ./danfe.pdf
 | `serial` | 9600/8/sem paridade/1/sem fluxo | Parâmetros opcionais do transporte serial POS |
 | `layout` | 80 mm, margens 3 mm, escala 100% | Cupom de texto gráfico pelo Fortes/spooler |
 | `runtimeDirectory` | runtime distribuído | Diretório de runtime com manifesto válido |
+
+### Catálogo de modelos ACBr — 0.1.3
+
+`TIPOS_IMPRESSORA` preserva os identificadores numéricos originais.
+`MODELOS_IMPRESSORA` é um catálogo imutável exportado pelo SDK, disponível sem
+iniciar o worker, com objetos `{ tipo, nome, rotulo }`. A consulta
+`capacidades()` mantém `tipos` e acrescenta `modelos` com o mesmo catálogo.
+
+| Tipo | Nome ACBr | Rótulo |
+| --- | --- | --- |
+| `0` | `ppTexto` | Texto |
+| `1` | `ppEscPosEpson` | ESC/POS Epson |
+| `2` | `ppEscBematech` | Bematech |
+| `3` | `ppEscDaruma` | Daruma |
+| `4` | `ppEscVox` | Vox |
+| `5` | `ppEscDiebold` | Diebold |
+| `6` | `ppEscEpsonP2` | Epson P2 |
+| `7` | `ppCustomPos` | Custom POS |
+| `8` | `ppEscPosStar` | POS Star/Elgin |
+| `9` | `ppEscZJiang` | ZJiang |
+| `10` | `ppEscGPrinter` | GPrinter |
+| `11` | `ppEscDatecs` | Datecs |
+| `12` | `ppEscSunmi` | Sunmi |
+
+O enum ACBr contém também `13 = ppExterno`, que exige uma classe Pascal
+`ModeloExterno` fornecida pelo host. Não é um driver nativo pronto e não é
+aceito por esta API. Os nomes e a ordem são conferidos contra a revisão ACBr
+48590; o componente não troca silenciosamente o modelo selecionado.
+
+Modelos diferentes de `0` e `8` exigem runtime com o recurso `modelos-acbr`
+(0.1.3 ou superior); o SDK recusa runtimes anteriores antes de iniciar o
+processo. Os modelos `0` e `8` continuam compatíveis com runtimes anteriores,
+respeitando os recursos opcionais usados. Todos os modelos nativos têm teste
+de geração offline de bytes. Isso não substitui a validação de compatibilidade
+física de cada equipamento e emulação.
 
 ### Serial e layout do cupom gráfico — 0.1.2
 

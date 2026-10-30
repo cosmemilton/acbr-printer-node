@@ -21,7 +21,10 @@ métodos de impressão/renderização.
   modelo 65/bobina. A resposta `capacidades` informa o que realmente foi compilado.
 
 As unidades ACBr devem vir da revisão 48590 fixada pelo projeto. O motor confere
-em runtime `Ord(ppTexto)=0` e `Ord(ppEscPosStar)=8`. O tipo não é deduzido pelo
+em runtime os nomes e a ordem de todo o enum, de `ppTexto=0` a `ppExterno=13`.
+Os modelos nativos `0..12` são aceitos; `ppExterno=13` não é selecionável, pois
+requer uma classe Pascal `ModeloExterno` fornecida pelo host. O catálogo
+`capacidades.modelos` usa os nomes reais desse enum e os mesmos rótulos do SDK. O tipo não é deduzido pelo
 nome do driver: `elgin` pode trabalhar com o perfil 8 informado pelo usuário.
 
 O build precisa dos diretórios Fontes/ACBrComum, Fontes/ACBrSerial,

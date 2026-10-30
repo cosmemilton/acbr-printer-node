@@ -67,6 +67,8 @@ def audit(tarball, approved):
         expected_features = {"pos", "fortes", "danfe"}
         if tuple(map(int, approved["version"].split("."))) >= (0, 1, 2):
             expected_features.update({"serial", "layout-spooler"})
+        if tuple(map(int, approved["version"].split("."))) >= (0, 1, 3):
+            expected_features.add("modelos-acbr")
         for platform, executable in (("linux", "acbr-printer-worker"), ("win32", "acbr-printer-worker.exe")):
             prefix = "package/runtime/" + platform + "-x64/"
             runtime = json.loads(read(prefix + "manifest.json"))

@@ -111,7 +111,9 @@ module.exports = async function check(api) {
   assert.equal(typeof api.ErroAcbrImpressora, 'function');
   assert.equal(api.TIPOS_IMPRESSORA.Texto, 0);
   assert.equal(api.TIPOS_IMPRESSORA.EscPosStar, 8);
-  assert.throws(() => api.criarImpressora({ tipo: 7 }), api.ErroAcbrImpressora);
+  assert.throws(() => api.criarImpressora({ tipo: 13 }), api.ErroAcbrImpressora);
+  assert.deepEqual(api.MODELOS_IMPRESSORA.map(model => model.tipo), Array.from({length:13}, (_, index) => index));
+  assert.equal(api.MODELOS_IMPRESSORA[8].rotulo, 'POS Star/Elgin');
   const printer = api.criarImpressora({ tipo: 0 });
   try {
     if (${Boolean(currentRuntime)}) {
@@ -120,6 +122,17 @@ module.exports = async function check(api) {
       assert.equal(capabilities.envioIniciado, false);
       assert.equal(capabilities.capacidades.tipoPadrao, 0);
       assert.equal(capabilities.capacidades.cortePapelOptIn, true);
+      assert.deepEqual(capabilities.capacidades.modelos, api.MODELOS_IMPRESSORA);
+      assert.deepEqual(capabilities.capacidades.tipos, api.MODELOS_IMPRESSORA.map(model => model.tipo));
+      for (const {tipo} of api.MODELOS_IMPRESSORA) {
+        const modelPrinter = api.criarImpressora({tipo});
+        try {
+          const generated = await modelPrinter.gerarEscpos('TESTE MODELO INSTALADO ' + tipo);
+          assert.equal(generated.sucesso, true);
+          assert.equal(generated.envioIniciado, false);
+          assert.ok(generated.dados.length > 0);
+        } finally { await modelPrinter.fechar(); }
+      }
       const bytes = await printer.gerarEscpos('TESTE INSTALACAO OFFLINE\\n');
       assert.equal(bytes.sucesso, true);
       assert.equal(bytes.envioIniciado, false);

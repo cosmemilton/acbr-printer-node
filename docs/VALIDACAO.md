@@ -2,13 +2,26 @@
 
 Este arquivo registra testes do novo pacote de impressão. Não representa homologação fiscal ou confirmação de saída física. O emissor existente não foi alterado.
 
+## Catálogo de modelos — 0.1.3, 30/10/2026
+
+- TypeScript estrito e builds ESM/CommonJS aprovados.
+- Runtimes completos recompilados com Free Pascal 3.2.2: Linux x64/GTK2/Lazarus 3.0 e Windows x64/Win32/Lazarus 4.8, ambos com Fortes/DANFE e fontes fixadas.
+- Suíte Linux com motor real: 43 testes aprovados; um caso exclusivo do Windows não se aplica.
+- Suíte Windows com motor real: 42 testes aprovados; o caso UNC exclusivo do Linux não se aplica e o diagnóstico de DLL ausente foi aprovado separadamente.
+- Os 13 modelos nativos 0..12 geraram bytes reais nas duas plataformas, em arquivo temporário próprio, sem transporte de impressão.
+- O catálogo imutável do SDK coincide com os nomes, números e rótulos de `capacidades.modelos`; tipo 8 preserva `ppEscPosStar` e **POS Star/Elgin**.
+- Modelo 13 (`ppExterno`) permanece indisponível porque exige uma classe Pascal `ModeloExterno` do host, não um driver nativo pronto.
+- Runtimes anteriores são recusados antes de criar processo para modelos novos; 0 e 8 mantêm compatibilidade e defaults existentes.
+- PDFs sintéticos 55/65, corte opt-in, resultado incerto, ausência de retry, cancelamento e isolamento por destino continuam cobertos.
+- Nenhuma impressão física, gaveta ou chamada fiscal foi executada nesta revisão. Geração de bytes não homologa fisicamente todos os equipamentos.
+
 ## Serial e layout — 0.1.2, 30/10/2026
 
 - TypeScript estrito e builds ESM/CommonJS aprovados.
 - Runtimes completos recompilados: Linux x64/GTK2/Fortes/DANFE e Windows x64/Win32/Fortes/DANFE.
 - Suíte Linux com motor real: 39 testes passaram; um teste exclusivo de dependência Windows não se aplica.
 - Suíte Windows: 38 testes passaram; o caso UNC exclusivo do Linux não se aplica e o teste de DLL ausente foi executado separadamente, com aprovação.
-- Bytes POS0/8, corte somente opt-in, PDFs sintéticos55/65 e configurações serial/layout foram exercitados sem destino físico.
+- Bytes POS0/8, corte somente opt-in, PDFs sintéticos 55/65 e configurações serial/layout foram exercitados sem destino físico.
 - Novas opções são normalizadas em snapshots independentes, validam faixas/enumerações e recusam runtime antigo sem o recurso exigido no manifesto.
 - A escala gráfica mantém a fonte padrão9pt com DPI próprio do renderer e altera fonte/espaçamento efetivos; não modifica DANFE ou bytes POS.
 - Nenhuma impressão física, gaveta ou chamada fiscal foi executada nesta revisão.

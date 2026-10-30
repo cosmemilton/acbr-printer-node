@@ -17,7 +17,7 @@ function PrinterProtocolError(const AMessage: string): TJSONObject;
 implementation
 
 uses
-  Math, base64, LazUTF8, Printers, ACBrPosPrinter, ACBrDeviceSerial
+  Math, TypInfo, base64, LazUTF8, Printers, ACBrPosPrinter, ACBrDeviceSerial
   {$IFDEF ACBR_PRINTER_FORTES}
   , RLReport, RLPrinters, RLTypes
   {$ENDIF}
@@ -31,6 +31,10 @@ uses
 const
   MaximumTextBytes = 2 * 1024 * 1024;
   MaximumXMLBytes = 2 * 1024 * 1024;
+  NativeModelNames: array[0..13] of string = (
+    'ppTexto', 'ppEscPosEpson', 'ppEscBematech', 'ppEscDaruma', 'ppEscVox', 'ppEscDiebold', 'ppEscEpsonP2', 'ppCustomPos', 'ppEscPosStar', 'ppEscZJiang', 'ppEscGPrinter', 'ppEscDatecs', 'ppEscSunmi', 'ppExterno');
+  NativeModelLabels: array[0..12] of string = (
+    'Texto', 'ESC/POS Epson', 'Bematech', 'Daruma', 'Vox', 'Diebold', 'Epson P2', 'Custom POS', 'POS Star/Elgin', 'ZJiang', 'GPrinter', 'Datecs', 'Sunmi');
 
 type
   EPrinterRequest = class(Exception)
@@ -223,6 +227,7 @@ end;
 procedure TPrinterOperation.ReadConfiguration;
 var
   Config, Options, SerialConfig, LayoutConfig: TJSONObject;
+  I: Integer;
 begin
   if IntegerValue(FRequest, 'versao', 0, 0, MaxInt) <> PrinterProtocolVersion then
     raise EPrinterRequest.Create('PROTOCOLO_INVALIDO', 'Versão de protocolo não suportada.');
@@ -234,9 +239,7 @@ begin
   FMode := StringValue(Config, 'modo', 'escpos');
   if (FMode <> 'escpos') and (FMode <> 'spooler') then
     raise EPrinterRequest.Create('CONFIGURACAO_INVALIDA', 'modo deve ser escpos ou spooler.');
-  FModel := IntegerValue(Config, 'tipo', 0, 0, 8);
-  if not (FModel in [0, 8]) then
-    raise EPrinterRequest.Create('CONFIGURACAO_INVALIDA', 'tipo deve ser 0 (texto) ou 8 (EscPosStar).');
+  FModel := IntegerValue(Config, 'tipo', 0, 0, High(NativeModelLabels));
   FColumns := IntegerValue(Config, 'colunas', 48, 1, 200);
   FBetweenReceipts := IntegerValue(Config, 'linhasEntreCupons', 0, 0, 100);
   FInterpretTags := BooleanValue(Config, 'interpretarTags', False);
@@ -269,8 +272,12 @@ begin
     raise EPrinterRequest.Create('CONFIGURACAO_INVALIDA', 'As margens devem preservar pelo menos 10 mm de largura útil.');
   FCopies := IntegerValue(Options, 'copias', 1, 1, 99);
   FPaperWidth := NumberValue(Options, 'larguraPapel', 80, 40, 300);
-  if (Ord(ppTexto) <> 0) or (Ord(ppEscPosStar) <> 8) then
+  if (Ord(Low(TACBrPosPrinterModelo)) <> 0) or
+     (Ord(High(TACBrPosPrinterModelo)) <> High(NativeModelNames)) then
     raise EPrinterRequest.Create('ACBR_INCOMPATIVEL', 'A enumeração do ACBr difere da revisão suportada.');
+  for I := Low(NativeModelNames) to High(NativeModelNames) do
+    if GetEnumName(TypeInfo(TACBrPosPrinterModelo), I) <> NativeModelNames[I] then
+      raise EPrinterRequest.Create('ACBR_INCOMPATIVEL', 'A enumeração do ACBr difere da revisão suportada.');
 end;
 
 procedure TPrinterOperation.BeginPhysicalSend;
@@ -360,8 +367,9 @@ end;
 
 procedure TPrinterOperation.Capabilities;
 var
-  Data: TJSONObject;
-  Models, Commands: TJSONArray;
+  Data, Model: TJSONObject;
+  Models, ModelDetails, Commands: TJSONArray;
+  I: Integer;
 begin
   Data := TJSONObject.Create;
   Data.Add('escpos', True);
@@ -389,9 +397,18 @@ begin
   Data.Add('danfePdf', False);
   {$ENDIF}
   Models := TJSONArray.Create;
-  Models.Add(0);
-  Models.Add(8);
+  ModelDetails := TJSONArray.Create;
+  for I := Low(NativeModelLabels) to High(NativeModelLabels) do
+  begin
+    Models.Add(I);
+    Model := TJSONObject.Create;
+    Model.Add('tipo', I);
+    Model.Add('nome', GetEnumName(TypeInfo(TACBrPosPrinterModelo), I));
+    Model.Add('rotulo', NativeModelLabels[I]);
+    ModelDetails.Add(Model);
+  end;
   Data.Add('tipos', Models);
+  Data.Add('modelos', ModelDetails);
   Data.Add('tipoPadrao', 0);
   Data.Add('tipo8', 'ppEscPosStar');
   Data.Add('confirmacaoFisica', False);

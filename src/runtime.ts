@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TextDecoder } from 'node:util';
-import { ErroAcbrImpressora, PROTOCOL_VERSION, SOURCE_REVISION,
+import { ErroAcbrImpressora, MODELOS_IMPRESSORA, PROTOCOL_VERSION, SOURCE_REVISION,
   type ComandoImpressao, type ConfiguracaoImpressora, type ConfiguracaoMotor, type CriaProcesso,
   type ConfiguracaoSerial, type ConfiguracaoLayoutSpooler, type EntradaXml, type OpcoesDanfe, type OpcoesOperacao, type ResultadoImpressao,
   type RuntimeManifest } from './types.js';
@@ -77,7 +77,7 @@ async function resolveRuntime(directory?: string, requiredFeatures: readonly str
   }
   const manifest = data as unknown as RuntimeManifest;
   if (requiredFeatures.some(feature => !Array.isArray(manifest.features) || !manifest.features.includes(feature))) {
-    throw fail('RUNTIME_INCOMPATIVEL', 'O runtime não suporta os parâmetros de serial ou layout desta configuração. Atualize o runtime de impressão.');
+    throw fail('RUNTIME_INCOMPATIVEL', 'O runtime não suporta os recursos exigidos por esta configuração. Atualize o runtime de impressão.');
   }
   for (const [name, hash] of Object.entries(manifest.files)) {
     if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash)) throw fail('RUNTIME_INVALIDO', 'Hash inválido no runtime.');
@@ -216,7 +216,7 @@ export function criarImpressora(options: ConfiguracaoImpressora = {}) {
   const mode = options.modo === undefined ? 'escpos' : options.modo;
   const kind = options.tipo === undefined ? 0 : options.tipo;
   if (!['escpos', 'spooler'].includes(mode)) throw fail('CONFIGURACAO_INVALIDA', 'O modo deve ser escpos ou spooler.');
-  if (kind !== 0 && kind !== 8) throw fail('CONFIGURACAO_INVALIDA', 'O tipo deve ser 0 (texto) ou 8 (ESC/POS Star).');
+  if (!MODELOS_IMPRESSORA.some(modelo => modelo.tipo === kind)) throw fail('CONFIGURACAO_INVALIDA', 'O tipo deve identificar um modelo nativo de MODELOS_IMPRESSORA (0 a 12).');
   if (options.interpretarTags !== undefined && typeof options.interpretarTags !== 'boolean') throw fail('CONFIGURACAO_INVALIDA', 'interpretarTags deve ser booleano.');
   if (options.cortarPapel !== undefined && typeof options.cortarPapel !== 'boolean') throw fail('CONFIGURACAO_INVALIDA', 'cortarPapel deve ser booleano.');
   if (options.runtimeDirectory !== undefined && (typeof options.runtimeDirectory !== 'string' || !options.runtimeDirectory.trim() || options.runtimeDirectory.includes('\0'))) {
@@ -229,7 +229,7 @@ export function criarImpressora(options: ConfiguracaoImpressora = {}) {
     interpretarTags: options.interpretarTags ?? false, cortarPapel: options.cortarPapel ?? false };
   if (options.serial !== undefined) config.serial = serialOptions(options.serial);
   if (options.layout !== undefined) config.layout = layoutOptions(options.layout);
-  const requiredFeatures = [...(mode === 'escpos' && config.serial ? ['serial'] : []), ...(mode === 'spooler' && config.layout ? ['layout-spooler'] : [])];
+  const requiredFeatures = [...(mode === 'escpos' && config.serial ? ['serial'] : []), ...(mode === 'spooler' && config.layout ? ['layout-spooler'] : []), ...(kind !== 0 && kind !== 8 ? ['modelos-acbr'] : [])];
   const port = destination(options.porta, 'porta'), printer = destination(options.impressora, 'impressora');
   if (port !== undefined) config.porta = port;
   if (printer !== undefined) config.impressora = printer;
