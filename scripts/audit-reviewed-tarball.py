@@ -64,13 +64,16 @@ def audit(tarball, approved):
         required = ["LICENSE", "NOTICE", "README.md", "DEPENDENCIES.lock.json", "dist/index.js", "dist/index.cjs", "dist/types/src/index.d.ts"]
         for name in required:
             read("package/" + name)
+        expected_features = {"pos", "fortes", "danfe"}
+        if tuple(map(int, approved["version"].split("."))) >= (0, 1, 2):
+            expected_features.update({"serial", "layout-spooler"})
         for platform, executable in (("linux", "acbr-printer-worker"), ("win32", "acbr-printer-worker.exe")):
             prefix = "package/runtime/" + platform + "-x64/"
             runtime = json.loads(read(prefix + "manifest.json"))
             if (runtime.get("formatVersion") != 1 or runtime.get("sourceRevision") != 48590
                     or runtime.get("platform") != platform or runtime.get("arch") != "x64"
                     or runtime.get("executable") != executable
-                    or set(runtime.get("features", [])) != {"pos", "fortes", "danfe"}):
+                    or set(runtime.get("features", [])) != expected_features):
                 raise ValueError("Runtime identity differs from review")
             inventory = runtime.get("files", {})
             actual = {name[len(prefix):] for name in members if name.startswith(prefix)} - {"manifest.json"}
