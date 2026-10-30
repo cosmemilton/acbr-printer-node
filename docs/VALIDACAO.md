@@ -2,6 +2,17 @@
 
 Este arquivo registra testes do novo pacote de impressão. Não representa homologação fiscal ou confirmação de saída física. O emissor existente não foi alterado.
 
+## Serial e layout — 0.1.2, 30/10/2026
+
+- TypeScript estrito e builds ESM/CommonJS aprovados.
+- Runtimes completos recompilados: Linux x64/GTK2/Fortes/DANFE e Windows x64/Win32/Fortes/DANFE.
+- Suíte Linux com motor real: 39 testes passaram; um teste exclusivo de dependência Windows não se aplica.
+- Suíte Windows: 38 testes passaram; o caso UNC exclusivo do Linux não se aplica e o teste de DLL ausente foi executado separadamente, com aprovação.
+- Bytes POS0/8, corte somente opt-in, PDFs sintéticos55/65 e configurações serial/layout foram exercitados sem destino físico.
+- Novas opções são normalizadas em snapshots independentes, validam faixas/enumerações e recusam runtime antigo sem o recurso exigido no manifesto.
+- A escala gráfica mantém a fonte padrão9pt com DPI próprio do renderer e altera fonte/espaçamento efetivos; não modifica DANFE ou bytes POS.
+- Nenhuma impressão física, gaveta ou chamada fiscal foi executada nesta revisão.
+
 ## Confirmado em 28/10/2026
 
 - Inspeção do emissor existente: TypeScript com worker Free Pascal/Lazarus e integração possível por `xmlBase64`.
@@ -34,7 +45,7 @@ Na etapa 0.1.0, o tipo `8` foi exercitado apenas na geração de bytes em arquiv
 
 ## Distribuição
 
-Não houve publicação npm, alteração de serviço ou transmissão à SEFAZ nesta etapa. A instalação deve usar os tarballs locais auditados. A disponibilidade efetiva de recursos deve ser consultada em `capacidades()`, principalmente quando o runtime foi compilado com `--pos-only`.
+Esse registro refere-se à preparação inicial de28/10. A disponibilidade de uma versão no npm deve ser conferida no registry; versões novas seguem o fluxo de staged publishing documentado em PUBLISHING.md. Não houve alteração de serviço ou transmissão à SEFAZ nesses testes. A disponibilidade efetiva de recursos deve ser consultada em `capacidades()`, principalmente quando o runtime foi compilado com `--pos-only`.
 
 ## Teste especializado — 0.1.1
 

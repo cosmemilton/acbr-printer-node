@@ -135,5 +135,5 @@ async function inventory(directory) {
 }
 await inventory(runtime);
 await writeFile(join(runtime, 'manifest.json'), JSON.stringify({ formatVersion: 1, sourceRevision: 48590, platform,
-  arch: 'x64', executable, widgetset, features: posOnly ? ['pos'] : ['pos', 'fortes', 'danfe'], files }, null, 2) + '\n');
+  arch: 'x64', executable, widgetset, features: posOnly ? ['pos', 'serial'] : ['pos', 'fortes', 'danfe', 'serial', 'layout-spooler'], files }, null, 2) + '\n');
 console.log('Runtime validado: ' + runtime);

@@ -2,7 +2,7 @@
 
 Impressão no Node.js com ACBrPosPrinter, FortesReport e os renderizadores DANFE do ACBr, compilados com Free Pascal/Lazarus. Pacote independente de `cosmemilton-acbr-node`: pode ser usado sozinho ou receber o XML produzido pelo emissor. Não usa Delphi nem binários ACBr Pro e não é um produto oficial do Projeto ACBr.
 
-Versão local: **0.1.1**. Esta documentação descreve o código local; não afirma disponibilidade no registry npm. O estado dos testes está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
+Versão local: **0.1.2**. Esta documentação descreve o código local; não afirma disponibilidade no registry npm. O estado dos testes está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
 
 ## Um pacote, três formas de impressão
 
@@ -20,7 +20,7 @@ Requer Node.js **22.12 ou superior**, x64, em Windows ou Linux. Instale o tarbal
 
 ```sh
 npm install --offline --ignore-scripts --no-audit --no-fund \
-  /caminho/cosmemilton-acbr-printer-node-0.1.1.tgz
+  /caminho/cosmemilton-acbr-printer-node-0.1.2.tgz
 ```
 
 O consumidor usa o executável já compilado. Free Pascal, Lazarus e as fontes são necessários para reconstruí-lo, não para carregar a API Node. Um runtime próprio pode ser informado por `runtimeDirectory`.
@@ -132,7 +132,35 @@ node examples/integracao-emissor.mjs ./resultado-fiscal.json ./danfe.pdf
 | `cortarPapel` | `false` | Booleano; habilita tags de corte no ACBrPosPrinter |
 | `timeoutMs` | `30000` | Inteiro de 1 a 120000 |
 | `limiteFila` | `32` | Inteiro de 0 a 1000 |
+| `serial` | 9600/8/sem paridade/1/sem fluxo | Parâmetros opcionais do transporte serial POS |
+| `layout` | 80 mm, margens 3 mm, escala 100% | Cupom de texto gráfico pelo Fortes/spooler |
 | `runtimeDirectory` | runtime distribuído | Diretório de runtime com manifesto válido |
+
+### Serial e layout do cupom gráfico — 0.1.2
+
+`serial` aceita `velocidade` (inteiro 300–115200, padrão 9600), `bitsDados`
+(5/6/7/8, padrão 8), `paridade` (`nenhuma`, `impar`, `par`, `marca`, `espaco`),
+`bitsParada` (1/1.5/2, padrão 1) e `controleFluxo` (`nenhum`, `xon-xoff`,
+`rts-cts`, `dtr-dsr`). São propriedades reais do dispositivo serial ACBr;
+não transformam uma fila USB ou UNC em porta serial.
+
+`layout` aceita `larguraPapel` (40–300 mm, padrão 80), `margemEsquerda`,
+`margemDireita`, `margemSuperior`, `margemInferior` (0–30 mm, padrão 3) e
+`escala` (50–200%, padrão 100). As margens horizontais devem deixar pelo menos
+10 mm úteis. A escala altera a fonte e o espaçamento efetivamente impressos,
+com arredondamento para pixels do renderer, e recalcula a quebra das linhas.
+Esse layout atende exclusivamente `imprimirTexto` no modo `spooler`: não é
+zoom de preview e não altera o DANFE nem os bytes ESC/POS. Para DANFE,
+continuam valendo as opções explícitas da operação.
+
+O tipo 8 continua `EscPosStar`; a apresentação amigável pode ser
+**POS Star/Elgin**. A confirmação física registrada refere-se à Elgin i9 do
+usuário, sem deduzir compatibilidade de toda impressora pela marca.
+
+Configurações que usam os parâmetros novos exigem runtime 0.1.2 com os
+recursos `serial`/`layout-spooler` no manifesto. Runtime antigo é recusado,
+evitando campos aceitos mas ignorados. `capacidades()` informa os indicadores
+`serialConfiguravel` e `layoutSpoolerConfiguravel`.
 
 Métodos: `capacidades()`, `listarImpressoras()`, `gerarEscpos(texto)`, `imprimirTexto(texto)`, `danfePdf(xml, opcoes)`, `imprimirDanfe(xml, opcoes)` e `fechar()`.
 

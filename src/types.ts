@@ -10,6 +10,24 @@ export type ComandoImpressao = 'capacidades' | 'listarImpressoras' | 'gerarEscpo
 export type EstadoImpressao = 'PREPARADO' | 'ENVIADO' | 'GERADO' | 'ERRO';
 
 export type CriaProcesso = (executavel: string, argumentos: string[], opcoes: SpawnOptionsWithoutStdio) => ChildProcessWithoutNullStreams;
+export interface ConfiguracaoSerial {
+  /** Bits por segundo; padrão 9600. Só é aplicado ao transporte serial do POS. */
+  velocidade?: number;
+  bitsDados?: 5 | 6 | 7 | 8;
+  paridade?: 'nenhuma' | 'impar' | 'par' | 'marca' | 'espaco';
+  bitsParada?: 1 | 1.5 | 2;
+  controleFluxo?: 'nenhum' | 'xon-xoff' | 'rts-cts' | 'dtr-dsr';
+}
+/** Layout do cupom de texto gráfico pelo Fortes; não altera o DANFE nem bytes ESC/POS. */
+export interface ConfiguracaoLayoutSpooler {
+  larguraPapel?: number;
+  margemEsquerda?: number;
+  margemDireita?: number;
+  margemSuperior?: number;
+  margemInferior?: number;
+  /** Percentual da fonte e espaçamento de texto; padrão 100. Não é zoom de preview. */
+  escala?: number;
+}
 export interface ConfiguracaoImpressora {
   modo?: ModoImpressao;
   /** Destino POS. No Windows, por exemplo String.raw`\\localhost\elgin`. */
@@ -23,6 +41,8 @@ export interface ConfiguracaoImpressora {
   interpretarTags?: boolean;
   /** Permite tags de corte; permanece desativado até autorização explícita. */
   cortarPapel?: boolean;
+  serial?: ConfiguracaoSerial;
+  layout?: ConfiguracaoLayoutSpooler;
   runtimeDirectory?: string;
   timeoutMs?: number;
   limiteFila?: number;
@@ -38,6 +58,8 @@ export interface ConfiguracaoMotor {
   linhasEntreCupons: number;
   interpretarTags: boolean;
   cortarPapel: boolean;
+  serial?: Required<ConfiguracaoSerial>;
+  layout?: Required<ConfiguracaoLayoutSpooler>;
 }
 export interface OpcoesOperacao { signal?: AbortSignal }
 export interface OpcoesDanfe { copias?: number; larguraPapel?: number }
@@ -67,6 +89,7 @@ export interface RuntimeManifest {
   platform: string;
   arch: string;
   executable: string;
+  features?: string[];
   files: Record<string, string>;
 }
 export class ErroAcbrImpressora extends Error {

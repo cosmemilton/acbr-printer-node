@@ -71,3 +71,19 @@ test('real Fortes DANFE renders synthetic 55 and 65 XML to PDF without print tra
   });
 
 export { syntheticXml };
+
+
+test('new native serial/layout settings are accepted offline and capabilities expose support', {skip:!enabled}, async () => {
+  const pos = criarImpressora({runtimeDirectory,serial:{velocidade:38400,bitsDados:7,paridade:'par',bitsParada:1.5,controleFluxo:'rts-cts'}});
+  const graphic = criarImpressora({runtimeDirectory,modo:'spooler',layout:{larguraPapel:58,margemEsquerda:2,margemDireita:2,margemSuperior:0,margemInferior:4,escala:125}});
+  try {
+    const bytes = await pos.gerarEscpos('SERIAL CONFIGURADO SEM DISPOSITIVO\n');
+    assert.equal(bytes.sucesso,true,JSON.stringify(bytes));
+    assert.equal(bytes.envioIniciado,false);
+    const caps = await graphic.capacidades();
+    assert.equal(caps.sucesso,true,JSON.stringify(caps));
+    assert.equal(caps.capacidades.serialConfiguravel,true);
+    assert.equal(caps.capacidades.layoutSpoolerConfiguravel,true);
+    assert.deepEqual(caps.capacidades.tipos,[0,8]);
+  } finally {await pos.fechar();await graphic.fechar();}
+});

@@ -17,7 +17,7 @@ function PrinterProtocolError(const AMessage: string): TJSONObject;
 implementation
 
 uses
-  Math, base64, LazUTF8, Printers, ACBrPosPrinter
+  Math, base64, LazUTF8, Printers, ACBrPosPrinter, ACBrDeviceSerial
   {$IFDEF ACBR_PRINTER_FORTES}
   , RLReport, RLPrinters, RLTypes
   {$ENDIF}
@@ -46,6 +46,9 @@ type
     FID, FCommand, FMode, FPort, FPrinter: string;
     FModel, FColumns, FBetweenReceipts, FCopies: Integer;
     FPaperWidth: Double;
+    FBaud, FDataBits: Integer;
+    FParity, FFlow: string;
+    FStopBits, FTextPaperWidth, FLeftMargin, FRightMargin, FTopMargin, FBottomMargin, FScale: Double;
     FInterpretTags, FCutEnabled, FSendStarted: Boolean;
     procedure ReadConfiguration;
     procedure BeginPhysicalSend;
@@ -94,6 +97,7 @@ var
   Value: TJSONData;
 begin
   Result := nil;
+  if not Assigned(AObject) then Exit;
   Value := AObject.Find(AName);
   if not Assigned(Value) then Exit;
   if Value.JSONType <> jtObject then
@@ -218,7 +222,7 @@ end;
 
 procedure TPrinterOperation.ReadConfiguration;
 var
-  Config, Options: TJSONObject;
+  Config, Options, SerialConfig, LayoutConfig: TJSONObject;
 begin
   if IntegerValue(FRequest, 'versao', 0, 0, MaxInt) <> PrinterProtocolVersion then
     raise EPrinterRequest.Create('PROTOCOLO_INVALIDO', 'Versão de protocolo não suportada.');
@@ -241,6 +245,28 @@ begin
   FPrinter := StringValue(Config, 'impressora', '');
   if (Pos(#0, FPort) > 0) or (Pos(#0, FPrinter) > 0) then
     raise EPrinterRequest.Create('CONFIGURACAO_INVALIDA', 'Destino de impressão inválido.');
+  SerialConfig := OptionalObject(Config, 'serial');
+  FBaud := IntegerValue(SerialConfig, 'velocidade', 9600, 300, 115200);
+  FDataBits := IntegerValue(SerialConfig, 'bitsDados', 8, 5, 8);
+  FParity := StringValue(SerialConfig, 'paridade', 'nenhuma');
+  if (FParity <> 'nenhuma') and (FParity <> 'impar') and (FParity <> 'par') and
+     (FParity <> 'marca') and (FParity <> 'espaco') then
+    raise EPrinterRequest.Create('CONFIGURACAO_INVALIDA', 'serial.paridade inválida.');
+  FStopBits := NumberValue(SerialConfig, 'bitsParada', 1, 1, 2);
+  if (FStopBits <> 1) and (FStopBits <> 1.5) and (FStopBits <> 2) then
+    raise EPrinterRequest.Create('CONFIGURACAO_INVALIDA', 'serial.bitsParada deve ser 1, 1.5 ou 2.');
+  FFlow := StringValue(SerialConfig, 'controleFluxo', 'nenhum');
+  if (FFlow <> 'nenhum') and (FFlow <> 'xon-xoff') and (FFlow <> 'rts-cts') and (FFlow <> 'dtr-dsr') then
+    raise EPrinterRequest.Create('CONFIGURACAO_INVALIDA', 'serial.controleFluxo inválido.');
+  LayoutConfig := OptionalObject(Config, 'layout');
+  FTextPaperWidth := NumberValue(LayoutConfig, 'larguraPapel', 80, 40, 300);
+  FLeftMargin := NumberValue(LayoutConfig, 'margemEsquerda', 3, 0, 30);
+  FRightMargin := NumberValue(LayoutConfig, 'margemDireita', 3, 0, 30);
+  FTopMargin := NumberValue(LayoutConfig, 'margemSuperior', 3, 0, 30);
+  FBottomMargin := NumberValue(LayoutConfig, 'margemInferior', 3, 0, 30);
+  FScale := NumberValue(LayoutConfig, 'escala', 100, 50, 200);
+  if FTextPaperWidth - FLeftMargin - FRightMargin < 10 then
+    raise EPrinterRequest.Create('CONFIGURACAO_INVALIDA', 'As margens devem preservar pelo menos 10 mm de largura útil.');
   FCopies := IntegerValue(Options, 'copias', 1, 1, 99);
   FPaperWidth := NumberValue(Options, 'larguraPapel', 80, 40, 300);
   if (Ord(ppTexto) <> 0) or (Ord(ppEscPosStar) <> 8) then
@@ -281,6 +307,21 @@ begin
     Result.ColunasFonteNormal := FColumns;
     Result.LinhasEntreCupons := FBetweenReceipts;
     Result.CortaPapel := FCutEnabled;
+    Result.Device.Baud := FBaud;
+    Result.Device.Data := FDataBits;
+    if FParity = 'impar' then Result.Device.Parity := pOdd
+    else if FParity = 'par' then Result.Device.Parity := pEven
+    else if FParity = 'marca' then Result.Device.Parity := pMark
+    else if FParity = 'espaco' then Result.Device.Parity := pSpace
+    else Result.Device.Parity := pNone;
+    if FStopBits = 1.5 then Result.Device.Stop := s1eMeio
+    else if FStopBits = 2 then Result.Device.Stop := s2
+    else Result.Device.Stop := s1;
+    if FFlow = 'xon-xoff' then Result.Device.HandShake := hsXON_XOFF
+    else if FFlow = 'rts-cts' then Result.Device.HandShake := hsRTS_CTS
+    else if FFlow = 'dtr-dsr' then Result.Device.HandShake := hsDTR_DSR
+    else Result.Device.HandShake := hsNenhum;
+
     // Texto puro não injeta seleção de página de código nem interpreta tags.
     if FModel = 0 then Result.PaginaDeCodigo := pcNone;
   except
@@ -325,10 +366,13 @@ begin
   Data := TJSONObject.Create;
   Data.Add('escpos', True);
   Data.Add('cortePapelOptIn', True);
+  Data.Add('serialConfiguravel', True);
   {$IFDEF ACBR_PRINTER_FORTES}
   Data.Add('spoolerFortes', True);
+  Data.Add('layoutSpoolerConfiguravel', True);
   {$ELSE}
   Data.Add('spoolerFortes', False);
+  Data.Add('layoutSpoolerConfiguravel', False);
   {$ENDIF}
   {$IFDEF ACBR_PRINTER_NFE}
   Data.Add('danfeEscpos', True);
@@ -436,7 +480,7 @@ var
   Band: TRLBand;
   Memo: TRLMemo;
   Lines, SourceLines: TStringList;
-  HeightMM: Double;
+  HeightMM, UsefulWidth, LineHeightMM, FontPoints: Double;
   I, Offset, WrapColumns: Integer;
   Line: string;
 begin
@@ -447,7 +491,10 @@ begin
   try
     // Não calcular altura só pelas quebras recebidas: texto longo é quebrado sem
     // perder caracteres e sem deixar o memo menor que as linhas renderizadas.
-    WrapColumns := Max(1, Min(FColumns, Floor((FPaperWidth - 6) * 72 / (25.4 * 0.6 * 9))));
+    UsefulWidth := FTextPaperWidth - FLeftMargin - FRightMargin;
+    FontPoints := 9.0 * FScale / 100;
+    LineHeightMM := 5.0 * FScale / 100;
+    WrapColumns := Max(1, Min(FColumns, Floor(UsefulWidth * 72 / (25.4 * 0.6 * FontPoints))));
     SourceLines.Text := AText;
     for I := 0 to SourceLines.Count - 1 do
     begin
@@ -460,32 +507,34 @@ begin
         Inc(Offset, WrapColumns);
       end;
     end;
-    HeightMM := Max(30.0, (Lines.Count + 2) * 5.0);
+    HeightMM := Max(30.0, (Lines.Count + 2) * LineHeightMM + FTopMargin + FBottomMargin - 6.0);
     Report.ShowProgress := False;
     Report.PrintDialog := False;
     Report.PrintEmpty := True;
     Report.PageSetup.PaperSize := fpCustom;
-    Report.PageSetup.PaperWidth := FPaperWidth;
+    Report.PageSetup.PaperWidth := FTextPaperWidth;
     Report.PageSetup.PaperHeight := HeightMM;
-    Report.Margins.LeftMargin := 3;
-    Report.Margins.RightMargin := 3;
-    Report.Margins.TopMargin := 3;
-    Report.Margins.BottomMargin := 3;
+    Report.Margins.LeftMargin := FLeftMargin;
+    Report.Margins.RightMargin := FRightMargin;
+    Report.Margins.TopMargin := FTopMargin;
+    Report.Margins.BottomMargin := FBottomMargin;
     Band := TRLBand.Create(Report);
     Band.Parent := Report;
     Band.BandType := btTitle;
     Band.AutoExpand := True;
-    Band.Height := Round((HeightMM - 6) * 96 / 25.4);
+    Band.Height := Round((HeightMM - FTopMargin - FBottomMargin) * 96 / 25.4);
     Memo := TRLMemo.Create(Band);
     Memo.Parent := Band;
     Memo.Left := 0;
     Memo.Top := 0;
-    Memo.Width := Round((FPaperWidth - 6) * 96 / 25.4);
+    Memo.Width := Round(UsefulWidth * 96 / 25.4);
     Memo.Height := Band.Height;
     Memo.AutoSize := True;
     Memo.WordWrap := False;
     Memo.Font.Name := 'Courier New';
     Memo.Font.Size := 9;
+    // Preserve o tamanho físico padrão também em monitores/filas com DPI diferente.
+    if FScale <> 100 then Memo.Font.Height := Round(Memo.Font.Height * FScale / 100);
     Memo.Lines.Assign(Lines);
     RLPrinter.PrinterName := FPrinter;
     RLPrinter.Copies := FCopies;

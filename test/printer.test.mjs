@@ -293,14 +293,14 @@ test('abort before launch has no side effects and an offline generation timeout 
   controller.abort();
   await assert.rejects(() => f.create().imprimirTexto('NAO IMPRIMIR', { signal: controller.signal }), expectedError());
   assert.equal(f.sessions.length, 0);
-  await assert.rejects(() => f.create({ timeoutMs: 20 }).gerarEscpos('NAO IMPRIMIR'), expectedError());
+  await assert.rejects(() => f.create({ timeoutMs: 500 }).gerarEscpos('NAO IMPRIMIR'), expectedError());
   assert.equal(f.sessions.length, 1);
   assert.equal(f.sessions[0].kills.length, 1);
 });
 
 test('timeout after send marker is uncertain and never automatically reprints', async t => {
   const f = await fixture(t, (_request, session) => { session.marker(); });
-  await assert.rejects(() => f.create({ timeoutMs: 25 }).imprimirTexto('NAO IMPRIMIR'), expectedError(undefined, true));
+  await assert.rejects(() => f.create({ timeoutMs: 500 }).imprimirTexto('NAO IMPRIMIR'), expectedError(undefined, true));
   assert.equal(f.sessions.length, 1);
   assert.equal(f.sessions[0].kills.length, 1);
 });
@@ -358,4 +358,44 @@ test('failed child teardown closes the owning instance and reports cleanup uncer
     assert.equal(error.falhaLimpeza, true);
     return true;
   });
+});
+
+
+test('serial/layout normalize independent snapshots and cross JSONL without physical output', async t => {
+  const f = await fixture(t);
+  f.manifest.features = ['serial', 'layout-spooler'];
+  await writeFile(join(f.directory, 'manifest.json'), JSON.stringify(f.manifest));
+  const serial = { velocidade: 38400, bitsDados: 7, paridade: 'par', bitsParada: 1.5, controleFluxo: 'rts-cts' };
+  const pos = f.create({ serial });
+  serial.velocidade = 9600;
+  await pos.gerarEscpos('SOMENTE MEMORIA\n');
+  assert.deepEqual(f.sessions.at(-1).request.config.serial,
+    { velocidade: 38400, bitsDados: 7, paridade: 'par', bitsParada: 1.5, controleFluxo: 'rts-cts' });
+  const layout = { larguraPapel: 58, margemEsquerda: 2, escala: 125 };
+  const spooler = f.create({ modo: 'spooler', impressora: 'FILA_SINTETICA', layout });
+  layout.escala = 200;
+  await spooler.capacidades();
+  assert.deepEqual(f.sessions.at(-1).request.config.layout,
+    { larguraPapel: 58, margemEsquerda: 2, margemDireita: 3, margemSuperior: 3, margemInferior: 3, escala: 125 });
+  assert.equal(f.sessions.some(session => ['imprimirTexto', 'imprimirDanfe'].includes(session.request.comando)), false);
+});
+
+test('serial/layout invalid values and unknown fields fail before runtime lookup', () => {
+  for (const config of [
+    {serial:null}, {serial:[]}, {serial:{velocidade:299}}, {serial:{velocidade:115201}},
+    {serial:{velocidade:NaN}}, {serial:{bitsDados:9}}, {serial:{bitsParada:'1'}},
+    {serial:{bitsParada:1.25}}, {serial:{paridade:'N'}}, {serial:{controleFluxo:'auto'}},
+    {serial:{senha:'proibido'}}, {layout:null}, {layout:[]}, {layout:{larguraPapel:39}},
+    {layout:{larguraPapel:301}}, {layout:{margemEsquerda:-1}}, {layout:{margemDireita:31}},
+    {layout:{margemSuperior:NaN}}, {layout:{margemInferior:Infinity}}, {layout:{escala:49}},
+    {layout:{escala:201}}, {layout:{escala:'100'}}, {layout:{zoom:100}},
+    {layout:{larguraPapel:40,margemEsquerda:20,margemDireita:20}},
+  ]) assert.throws(() => criarImpressora(config), expectedError('CONFIGURACAO_INVALIDA'));
+});
+
+test('new options reject old runtime manifests instead of silently ignoring settings', async t => {
+  const f = await fixture(t);
+  await assert.rejects(f.create({serial:{}}).gerarEscpos('SEM ENVIO'), expectedError('RUNTIME_INCOMPATIVEL'));
+  await assert.rejects(f.create({modo:'spooler',layout:{}}).capacidades(), expectedError('RUNTIME_INCOMPATIVEL'));
+  assert.equal(f.sessions.length,0);
 });

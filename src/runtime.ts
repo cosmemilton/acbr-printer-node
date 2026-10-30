@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { TextDecoder } from 'node:util';
 import { ErroAcbrImpressora, PROTOCOL_VERSION, SOURCE_REVISION,
   type ComandoImpressao, type ConfiguracaoImpressora, type ConfiguracaoMotor, type CriaProcesso,
-  type EntradaXml, type OpcoesDanfe, type OpcoesOperacao, type ResultadoImpressao,
+  type ConfiguracaoSerial, type ConfiguracaoLayoutSpooler, type EntradaXml, type OpcoesDanfe, type OpcoesOperacao, type ResultadoImpressao,
   type RuntimeManifest } from './types.js';
 
 const INPUT_LIMIT = 2 * 1024 * 1024;
@@ -48,7 +48,7 @@ function confined(root: string, name: string): string {
   return file;
 }
 interface Runtime { directory: string; executable: string }
-async function resolveRuntime(directory?: string): Promise<Runtime> {
+async function resolveRuntime(directory?: string, requiredFeatures: readonly string[] = []): Promise<Runtime> {
   if (!['linux', 'win32'].includes(process.platform) || process.arch !== 'x64') {
     throw fail('PLATAFORMA_NAO_SUPORTADA', 'Esta versão suporta Linux e Windows x64.');
   }
@@ -76,6 +76,9 @@ async function resolveRuntime(directory?: string): Promise<Runtime> {
     throw fail('RUNTIME_INVALIDO', 'Manifesto, revisão ACBr ou plataforma do runtime incompatíveis.');
   }
   const manifest = data as unknown as RuntimeManifest;
+  if (requiredFeatures.some(feature => !Array.isArray(manifest.features) || !manifest.features.includes(feature))) {
+    throw fail('RUNTIME_INCOMPATIVEL', 'O runtime não suporta os parâmetros de serial ou layout desta configuração. Atualize o runtime de impressão.');
+  }
   for (const [name, hash] of Object.entries(manifest.files)) {
     if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash)) throw fail('RUNTIME_INVALIDO', 'Hash inválido no runtime.');
     const file = confined(root, name);
@@ -172,10 +175,44 @@ function textData(value: unknown): string {
   return value;
 }
 
+function decimal(value: unknown, minimum: number, maximum: number, field: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < minimum || value > maximum) {
+    throw fail('CONFIGURACAO_INVALIDA', `O campo ${field} deve estar entre ${minimum} e ${maximum}.`);
+  }
+  return value;
+}
+function serialOptions(value: unknown): Required<ConfiguracaoSerial> {
+  if (!plain(value)) throw fail('CONFIGURACAO_INVALIDA', 'serial deve ser um objeto.');
+  keys(value, ['velocidade', 'bitsDados', 'paridade', 'bitsParada', 'controleFluxo'], 'CONFIGURACAO_INVALIDA');
+  const velocidade = integer(value.velocidade === undefined ? 9600 : value.velocidade, 300, 115200, 'serial.velocidade');
+  const bitsDados = integer(value.bitsDados === undefined ? 8 : value.bitsDados, 5, 8, 'serial.bitsDados') as 5 | 6 | 7 | 8;
+  const paridade = value.paridade === undefined ? 'nenhuma' : value.paridade;
+  const bitsParada = value.bitsParada === undefined ? 1 : value.bitsParada;
+  const controleFluxo = value.controleFluxo === undefined ? 'nenhum' : value.controleFluxo;
+  if (!['nenhuma', 'impar', 'par', 'marca', 'espaco'].includes(String(paridade)) || typeof paridade !== 'string') throw fail('CONFIGURACAO_INVALIDA', 'serial.paridade inválida.');
+  if (![1, 1.5, 2].includes(bitsParada as number)) throw fail('CONFIGURACAO_INVALIDA', 'serial.bitsParada deve ser 1, 1.5 ou 2.');
+  if (!['nenhum', 'xon-xoff', 'rts-cts', 'dtr-dsr'].includes(String(controleFluxo)) || typeof controleFluxo !== 'string') throw fail('CONFIGURACAO_INVALIDA', 'serial.controleFluxo inválido.');
+  return { velocidade, bitsDados, paridade: paridade as Required<ConfiguracaoSerial>['paridade'], bitsParada: bitsParada as 1 | 1.5 | 2, controleFluxo: controleFluxo as Required<ConfiguracaoSerial>['controleFluxo'] };
+}
+function layoutOptions(value: unknown): Required<ConfiguracaoLayoutSpooler> {
+  if (!plain(value)) throw fail('CONFIGURACAO_INVALIDA', 'layout deve ser um objeto.');
+  keys(value, ['larguraPapel', 'margemEsquerda', 'margemDireita', 'margemSuperior', 'margemInferior', 'escala'], 'CONFIGURACAO_INVALIDA');
+  const normalized = {
+    larguraPapel: decimal(value.larguraPapel === undefined ? 80 : value.larguraPapel, 40, 300, 'layout.larguraPapel'),
+    margemEsquerda: decimal(value.margemEsquerda === undefined ? 3 : value.margemEsquerda, 0, 30, 'layout.margemEsquerda'),
+    margemDireita: decimal(value.margemDireita === undefined ? 3 : value.margemDireita, 0, 30, 'layout.margemDireita'),
+    margemSuperior: decimal(value.margemSuperior === undefined ? 3 : value.margemSuperior, 0, 30, 'layout.margemSuperior'),
+    margemInferior: decimal(value.margemInferior === undefined ? 3 : value.margemInferior, 0, 30, 'layout.margemInferior'),
+    escala: decimal(value.escala === undefined ? 100 : value.escala, 50, 200, 'layout.escala'),
+  };
+  if (normalized.larguraPapel - normalized.margemEsquerda - normalized.margemDireita < 10) throw fail('CONFIGURACAO_INVALIDA', 'As margens devem preservar pelo menos 10 mm de largura útil.');
+  return normalized;
+}
+
 export function criarImpressora(options: ConfiguracaoImpressora = {}) {
   const rawOptions: unknown = options;
   if (!plain(rawOptions)) throw fail('CONFIGURACAO_INVALIDA', 'Informe a configuração como objeto.');
-  keys(rawOptions, ['modo', 'porta', 'impressora', 'tipo', 'colunas', 'linhasEntreCupons', 'interpretarTags', 'cortarPapel', 'runtimeDirectory', 'timeoutMs', 'limiteFila', 'criaProcesso'], 'CONFIGURACAO_INVALIDA');
+  keys(rawOptions, ['modo', 'porta', 'impressora', 'tipo', 'colunas', 'linhasEntreCupons', 'interpretarTags', 'cortarPapel', 'serial', 'layout', 'runtimeDirectory', 'timeoutMs', 'limiteFila', 'criaProcesso'], 'CONFIGURACAO_INVALIDA');
   const mode = options.modo === undefined ? 'escpos' : options.modo;
   const kind = options.tipo === undefined ? 0 : options.tipo;
   if (!['escpos', 'spooler'].includes(mode)) throw fail('CONFIGURACAO_INVALIDA', 'O modo deve ser escpos ou spooler.');
@@ -190,6 +227,9 @@ export function criarImpressora(options: ConfiguracaoImpressora = {}) {
     colunas: integer(options.colunas === undefined ? 48 : options.colunas, 1, 200, 'colunas'),
     linhasEntreCupons: integer(options.linhasEntreCupons === undefined ? 0 : options.linhasEntreCupons, 0, 100, 'linhasEntreCupons'),
     interpretarTags: options.interpretarTags ?? false, cortarPapel: options.cortarPapel ?? false };
+  if (options.serial !== undefined) config.serial = serialOptions(options.serial);
+  if (options.layout !== undefined) config.layout = layoutOptions(options.layout);
+  const requiredFeatures = [...(mode === 'escpos' && config.serial ? ['serial'] : []), ...(mode === 'spooler' && config.layout ? ['layout-spooler'] : [])];
   const port = destination(options.porta, 'porta'), printer = destination(options.impressora, 'impressora');
   if (port !== undefined) config.porta = port;
   if (printer !== undefined) config.impressora = printer;
@@ -270,7 +310,7 @@ export function criarImpressora(options: ConfiguracaoImpressora = {}) {
       item.stop = stop;
       const timer = setTimeout(() => stop('TIMEOUT_MOTOR', 'O motor de impressão excedeu o prazo. Confira o destino antes de repetir o envio.'), timeout);
       if (closed || item.signal?.aborted) { stop('OPERACAO_CANCELADA', 'Operação cancelada antes da execução.'); return; }
-      void (runtime ??= resolveRuntime(runtimeDirectory)).then(resolved => {
+      void (runtime ??= resolveRuntime(runtimeDirectory, requiredFeatures)).then(resolved => {
         if (finished || stopError) return;
         if (closed || item.signal?.aborted) { stop('OPERACAO_CANCELADA', 'Operação cancelada antes da execução.'); return; }
         const env: NodeJS.ProcessEnv = {};
