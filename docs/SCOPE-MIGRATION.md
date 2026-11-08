@@ -13,3 +13,13 @@
 Build e typecheck passaram. Testes Node: 39 aprovados e 7 casos específicos de plataforma/nativo não executados nessa rodada. A instalação local do tarball em Linux passou em ESM e CommonJS, verificando os hashes dos runtimes Linux e Windows, capacidades e geração em memória dos 13 modelos ACBr. Nenhuma impressão física foi feita. Os scripts de publicação preservam os manifests antigos e aceitam o nome scoped em novos manifests.
 
 O mesmo tarball foi instalado em uma pasta temporária Windows: imports ESM/CJS, capacidades e geração em memória dos 13 modelos passaram. O runner npm direto sobre UNC falhou por limitação de caminho do npm/Windows; o teste consumidor instalado fora do UNC passou sem alterar confiança do Git ou configurações do sistema.
+
+## GitHub Actions
+
+The publication workflow runs only on the release branch (push or manual dispatch).
+Migration branches and pull requests run validation only. A preflight now requires the
+reviewed manifest name and version to match package.json, preventing the historical
+unscoped 0.1.3 bundle from being resubmitted after this migration. Before enabling a
+future scoped release, prepare its own reviewed manifest, transport bundle, and unique
+release tag/assets. Do not overwrite the existing v0.1.3 release or reuse its hashes.
+No token, secret, trusted publisher, or credential permission was changed.
