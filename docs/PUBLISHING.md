@@ -1,3 +1,7 @@
+> Este fluxo e seus manifests imutáveis descrevem a publicação histórica sem escopo.
+> A preparação de `@cosmemilton/acbr-printer-node` está em [SCOPE-MIGRATION.md](SCOPE-MIGRATION.md).
+> Não reutilize o bundle revisado antigo para publicar o novo pacote.
+
 # Publicação revisada no npm
 
 O workflow `Stage reviewed npm release` executa na branch `release`. Ele usa somente o token cadastrado em **Settings → Secrets and variables → Actions → NPM_TOKEN**, sem registrar seu valor.

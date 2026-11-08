@@ -1,6 +1,20 @@
-# cosmemilton-acbr-printer-node
+# @cosmemilton/acbr-printer-node
 
-Impressão no Node.js com ACBrPosPrinter, FortesReport e os renderizadores DANFE do ACBr, compilados com Free Pascal/Lazarus. Pacote independente de `cosmemilton-acbr-node`: pode ser usado sozinho ou receber o XML produzido pelo emissor. Não usa Delphi nem binários ACBr Pro e não é um produto oficial do Projeto ACBr.
+## Migração para o escopo npm
+
+O novo nome do pacote é `@cosmemilton/acbr-printer-node`. Instale com
+`npm install @cosmemilton/acbr-printer-node` e atualize os imports. A API,
+os runtimes incorporados e a licença LGPL-2.1-or-later permanecem iguais.
+Os pacotes antigos não são removidos nem alterados automaticamente.
+
+Esta árvore prepara a primeira publicação scoped em 0.1.3; ela não comprova
+que o pacote já está disponível no registro. Os manifests em `releases/`
+e o workflow de release existente referem-se a artefatos históricos do nome
+antigo. Não reutilize seus hashes para publicar o novo nome: gere e revise
+um novo tarball e manifesto. Consulte `docs/SCOPE-MIGRATION.md`.
+
+
+Impressão no Node.js com ACBrPosPrinter, FortesReport e os renderizadores DANFE do ACBr, compilados com Free Pascal/Lazarus. Pacote independente de `@cosmemilton/acbr-node`: pode ser usado sozinho ou receber o XML produzido pelo emissor. Não usa Delphi nem binários ACBr Pro e não é um produto oficial do Projeto ACBr.
 
 Versão local: **0.1.3**. Esta documentação descreve o código local; não afirma disponibilidade no registry npm. O estado dos testes está em [docs/VALIDACAO.md](docs/VALIDACAO.md).
 
@@ -28,7 +42,7 @@ O consumidor usa o executável já compilado. Free Pascal, Lazarus e as fontes s
 ## Primeiro teste: tipo 0, sem enviar papel
 
 ```js
-import { criarImpressora } from 'cosmemilton-acbr-printer-node';
+import { criarImpressora } from '@cosmemilton/acbr-printer-node';
 
 const impressora = criarImpressora({
   modo: 'escpos',
@@ -88,7 +102,7 @@ O spooler usa o **nome da fila**, não a porta UNC. As filas disponíveis perten
 
 ```js
 import { readFile, writeFile } from 'node:fs/promises';
-import { criarImpressora } from 'cosmemilton-acbr-printer-node';
+import { criarImpressora } from '@cosmemilton/acbr-printer-node';
 
 const impressora = criarImpressora({ modo: 'spooler', impressora: 'ELGIN' });
 try {

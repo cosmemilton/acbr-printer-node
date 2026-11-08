@@ -16,10 +16,10 @@ def main():
     manifest = pathlib.Path(sys.argv[1])
     reviewed = json.loads(manifest.read_text())
     if (reviewed.get('repository') != 'cosmemilton/acbr-printer-node'
-            or reviewed.get('name') != 'cosmemilton-acbr-printer-node'
+            or reviewed.get('name') not in ('cosmemilton-acbr-printer-node', '@cosmemilton/acbr-printer-node')
             or not re.fullmatch(r'\d+\.\d+\.\d+', reviewed.get('version', ''))
             or reviewed.get('tag') != 'v' + reviewed['version']
-            or reviewed.get('file') != reviewed['name'] + '-' + reviewed['version'] + '.tgz'
+            or reviewed.get('file') != reviewed['name'].lstrip('@').replace('/', '-') + '-' + reviewed['version'] + '.tgz'
             or not re.fullmatch(r'[a-f0-9]{40}', reviewed.get('transportCommit', ''))
             or reviewed.get('transportRef') != 'refs/heads/npm-reviewed-' + reviewed['version']
             or not re.fullmatch(r'[a-f0-9]{64}', reviewed.get('sha256', ''))
