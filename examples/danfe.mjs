@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { criarImpressora } from 'cosmemilton-acbr-printer-node';
+import { criarImpressora } from '@cosmemilton/acbr-printer-node';
 
 let arquivo, saida = './danfe.pdf', enviar = false;
 for (let index = 2; index < process.argv.length; index++) {

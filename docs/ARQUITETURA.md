@@ -1,6 +1,6 @@
 # Arquitetura de impressão
 
-`cosmemilton-acbr-printer-node` é um pacote separado do emissor `cosmemilton-acbr-node`. A separação mantém impressoras, spooler, renderer gráfico e seus requisitos opcionais para quem só precisa emitir documentos fiscais. A aplicação pode usar os dois pacotes, mas nenhum deles exige que o outro esteja instalado.
+`@cosmemilton/acbr-printer-node` é um pacote separado do emissor `@cosmemilton/acbr-node`. A separação mantém impressoras, spooler, renderer gráfico e seus requisitos opcionais para quem só precisa emitir documentos fiscais. A aplicação pode usar os dois pacotes, mas nenhum deles exige que o outro esteja instalado.
 
 ## Fachada e backends
 

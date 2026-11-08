@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { criarImpressora } from 'cosmemilton-acbr-printer-node';
+import { criarImpressora } from '@cosmemilton/acbr-printer-node';
 
 const [arquivo, saida = './danfe.pdf', ...extras] = process.argv.slice(2);
 if (!arquivo || extras.length) throw new Error('Uso: node examples/integracao-emissor.mjs resultado-fiscal.json [danfe.pdf]');

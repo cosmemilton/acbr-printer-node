@@ -1,4 +1,4 @@
-import { criarImpressora } from 'cosmemilton-acbr-printer-node';
+import { criarImpressora } from '@cosmemilton/acbr-printer-node';
 
 if (process.argv.slice(2).some(argument => argument !== '--enviar')) {
   throw new Error('Uso: node examples/spooler.mjs [--enviar]');

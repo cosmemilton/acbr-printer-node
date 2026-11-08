@@ -12,8 +12,8 @@ const digest = (data, algorithm, encoding = 'hex') => createHash(algorithm).upda
 const allowedCodes = new Set(['E400', 'E401', 'E403', 'E404', 'E409', 'E413', 'E422', 'EOTP', 'ENEEDAUTH', 'EPUBLISHCONFLICT', 'E_STAGE_REQUIRED', 'ETIMEDOUT', 'ECONNRESET', 'ENOTFOUND', 'EAI_AGAIN', 'EJSONPARSE', 'EUSAGE']);
 
 export function assertManifest(value) {
-  if (value?.name !== 'cosmemilton-acbr-printer-node' || !/^\d+\.\d+\.\d+$/.test(value.version ?? '') ||
-      value.file !== `${value.name}-${value.version}.tgz` || !/^[a-f0-9]{64}$/.test(value.sha256 ?? '') ||
+  if (!['cosmemilton-acbr-printer-node', '@cosmemilton/acbr-printer-node'].includes(value?.name) || !/^\d+\.\d+\.\d+$/.test(value.version ?? '') ||
+      value.file !== `${value.name.replace(/^@/, "").replace("/", "-")}-${value.version}.tgz` || !/^[a-f0-9]{64}$/.test(value.sha256 ?? '') ||
       !Number.isSafeInteger(value.bytes) || value.bytes <= 0 || value.bytes > 100 * 1024 * 1024 ||
       !/^[a-f0-9]{40}$/.test(value.sourceCommit ?? '') || value.npmAccount !== 'miltoncosme') {
     throw Error('Manifesto de release revisada inválido.');
@@ -106,7 +106,7 @@ export async function stagedArtifact(entry, { npm = run } = {}) {
   const temporary = await mkdtemp(path.join(tmpdir(), 'acbr-printer-stage-'));
   try {
     await npm('npm', ['stage', 'download', stage.id, ...args], { cwd: temporary });
-    const filename = `${entry.name}-${entry.version}-${stage.id}.tgz`;
+    const filename = `${entry.name.replace(/^@/, "").replace("/", "-")}-${entry.version}-${stage.id}.tgz`;
     const files = await readdir(temporary, { withFileTypes: true });
     if (files.length !== 1 || !files[0].isFile() || files[0].name !== filename ||
         !(await readFile(path.join(temporary, filename))).equals(entry.data)) throw Error('Bytes do staging divergem da revisão.');

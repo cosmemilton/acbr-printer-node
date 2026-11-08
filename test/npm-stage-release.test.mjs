@@ -123,3 +123,26 @@ test('authentication and list failure diagnostics survive sanitization', async (
     return true;
   });
 });
+
+
+test('scoped manifest uses the npm flattened tarball name without replacing historical identities', () => {
+  const scoped = { ...entry, name: '@cosmemilton/acbr-printer-node' };
+  assert.equal(assertManifest(scoped), scoped);
+  assert.equal(assertManifest(entry), entry);
+  assert.throws(() => assertManifest({ ...scoped, file: '@cosmemilton/acbr-printer-node-0.1.1.tgz' }));
+  assert.throws(() => assertManifest({ ...scoped, name: '@someoneelse/acbr-printer-node' }));
+});
+
+test('scoped staging targets the new package and retains public access', async () => {
+  const scoped = { ...entry, name: '@cosmemilton/acbr-printer-node' };
+  const commands = []; let lookups = 0;
+  const result = await stageReviewed(scoped, { npm: async (_cmd, args) => {
+    commands.push(args);
+    return args[0] === 'whoami' ? success('miltoncosme\n') : success('{}');
+  }, lookup: async value => { assert.equal(value.name, scoped.name); return null; },
+  stageLookup: async value => { assert.equal(value.name, scoped.name); return ++lookups === 1 ? null : { stageId:id, stagedBytesMatchApproved:true }; } });
+  assert.equal(result.name, scoped.name);
+  assert.equal(result.status, 'awaiting-approval');
+  const submit = commands.find(args => args[0] === 'stage');
+  assert.equal(submit[submit.indexOf('--access') + 1], 'public');
+});

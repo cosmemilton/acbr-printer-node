@@ -36,6 +36,16 @@ jobs:
         run: npm install --global npm@11.16.0 --ignore-scripts --no-audit --no-fund
       - name: Check release submission logic
         run: node --test test/npm-stage-release.test.mjs
+      - name: Require a manifest matching the current package
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          const reviewed = JSON.parse(readFileSync(process.env.REVIEWED_MANIFEST, 'utf8'));
+          if (reviewed.name !== pkg.name || reviewed.version !== pkg.version) {
+            throw new Error('Reviewed manifest targets a different package or version. Prepare a new scoped release manifest; do not reuse the historical unscoped bundle.');
+          }
+          NODE
       - name: Download immutable reviewed bundle
         run: python3 scripts/download-reviewed-bundle.py "$REVIEWED_MANIFEST" "$BUNDLE_DIRECTORY"
       - name: Audit package, runtimes and licenses

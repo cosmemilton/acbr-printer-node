@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = await realpath(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
 const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
-assert.equal(pkg.name, 'cosmemilton-acbr-printer-node');
+assert.equal(pkg.name, '@cosmemilton/acbr-printer-node');
 assert.equal(typeof pkg.version, 'string');
 const npmCli = process.env.npm_execpath;
 if (!npmCli || !path.isAbsolute(npmCli)) throw new Error('Execute este teste com npm run test:package (npm_execpath é necessário).');
